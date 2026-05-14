@@ -1,0 +1,52 @@
+[[projects]]
+id          = "agent-marketplace"
+description = "Central registry for agent plugins (MCPs, skills, commands, hooks)"
+provider    = "github"
+owner       = "Seretos"
+repo        = "agent-marketplace"
+token_env   = "GITHUB_TOKEN"
+
+[projects.permissions.issues]
+create = true
+modify = true
+
+[[projects]]
+id          = "agent-vdesktop"
+description = "Microsoft Virtual Desktop management MCP plugin for Claude Code"
+provider    = "github"
+owner       = "Seretos"
+repo        = "agent-vdesktop"
+token_env   = "GITHUB_TOKEN"
+
+[projects.permissions.issues]
+create = true
+modify = true
+
+[projects.permissions.pulls]
+create = true
+modify = true
+merge  = true
+
+[[projects]]
+id          = "agent-project-issues"
+description = "MCP server for GitHub/GitLab issue management"
+provider    = "github"
+owner       = "Seretos"
+repo        = "agent-project-issues"
+token_env   = "GITHUB_TOKEN"
+
+[projects.permissions.issues]
+create = true
+modify = true
+
+[[projects]]
+id          = "agent-vdesktop-skill"
+description = "Skill plugin teaching Claude how to drive the agent-vdesktop MCP"
+provider    = "github"
+owner       = "Seretos"
+repo        = "agent-vdesktop-skill"
+token_env   = "GITHUB_TOKEN"
+
+[projects.permissions.issues]
+create = true
+modify = true

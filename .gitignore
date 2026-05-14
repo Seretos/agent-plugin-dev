@@ -1,0 +1,19 @@
+# Sub-repos managed separately via scripts/init.*
+/agent-marketplace/
+/plugins/
+
+# dev-test plugin symlinks (created by init script)
+/dev-test/plugins/
+
+# Local Claude Code user overrides
+**/settings.local.json
+
+# Migration leftovers
+/old/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
