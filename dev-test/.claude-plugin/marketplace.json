@@ -4,6 +4,7 @@
   "plugins": [
     { "name": "agent-vdesktop",       "source": "./plugins/agent-vdesktop" },
     { "name": "agent-vdesktop-skill", "source": "./plugins/agent-vdesktop-skill" },
-    { "name": "agent-project-issues", "source": "./plugins/agent-project-issues" }
+    { "name": "agent-project-issues", "source": "./plugins/agent-project-issues" },
+    { "name": "agent-worktree",       "source": "./plugins/agent-worktree" }
   ]
 }

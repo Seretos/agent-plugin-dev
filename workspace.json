@@ -24,11 +24,18 @@
       "path": "plugins/agent-project-issues",
       "remote": "git@github.com:Seretos/agent-project-issues.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-worktree",
+      "path": "plugins/agent-worktree",
+      "remote": "git@github.com:Seretos/agent-worktree.git",
+      "branch": "main"
     }
   ],
   "devTestSymlinks": [
     { "from": "dev-test/plugins/agent-vdesktop",       "to": "plugins/agent-vdesktop" },
     { "from": "dev-test/plugins/agent-vdesktop-skill", "to": "plugins/agent-vdesktop-skill" },
-    { "from": "dev-test/plugins/agent-project-issues", "to": "plugins/agent-project-issues" }
+    { "from": "dev-test/plugins/agent-project-issues", "to": "plugins/agent-project-issues" },
+    { "from": "dev-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" }
   ]
 }

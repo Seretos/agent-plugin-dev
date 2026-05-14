@@ -45,3 +45,15 @@ token_env   = "GITHUB_TOKEN"
 [projects.permissions.issues]
 create = true
 modify = true
+
+[[projects]]
+id          = "agent-worktree"
+description = ""
+provider    = "github"
+owner       = "Seretos"
+repo        = "agent-worktree"
+token_env   = "GITHUB_TOKEN"
+
+[projects.permissions.issues]
+create = true
+modify = true

@@ -13,7 +13,8 @@ agent-plugin-dev/             # this directory — meta-repo Seretos/agent-plugi
 ├── plugins/                  # all gitignored here
 │   ├── agent-vdesktop/       # own repo: Seretos/agent-vdesktop
 │   ├── agent-vdesktop-skill/ # own repo: Seretos/agent-vdesktop-skill
-│   └── agent-project-issues/ # own repo: Seretos/agent-project-issues
+│   ├── agent-project-issues/ # own repo: Seretos/agent-project-issues
+│   └── agent-worktree/       # own repo: Seretos/agent-worktree
 ├── dev-test/                 # local marketplace (directory source) for daily dev
 └── prod-test/                # test setup against the real GitHub marketplace
 ```

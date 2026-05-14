@@ -24,7 +24,7 @@ cd agent-plugin-dev
 
 Das Init-Script:
 
-- klont die 4 Plugin-Repos (`agent-marketplace`, `plugins/agent-vdesktop`, `plugins/agent-vdesktop-skill`, `plugins/agent-project-issues`) an die richtigen Stellen,
+- klont die 5 Plugin-Repos (`agent-marketplace`, `plugins/agent-vdesktop`, `plugins/agent-vdesktop-skill`, `plugins/agent-project-issues`, `plugins/agent-worktree`) an die richtigen Stellen,
 - legt die Symlinks unter `dev-test/plugins/` an, die der lokale `dev-marketplace` referenziert.
 
 Falls die Symlink-Erzeugung unter Windows scheitert (kein Developer Mode, keine Admin-Shell), gibt das Script die nötigen Commands aus, die du selbst aus einer Admin-PowerShell ausführen kannst. Idempotent — kann jederzeit erneut laufen.
@@ -40,7 +40,8 @@ agent-plugin-dev/             # dieses Meta-Repo
 ├── plugins/
 │   ├── agent-vdesktop/       # eigenes Repo
 │   ├── agent-vdesktop-skill/ # eigenes Repo
-│   └── agent-project-issues/ # eigenes Repo
+│   ├── agent-project-issues/ # eigenes Repo
+│   └── agent-worktree/       # eigenes Repo
 ├── dev-test/                 # lokaler Marketplace (directory source)
 ├── prod-test/                # Test gegen den echten Marketplace von GitHub
 └── scripts/                  # init.ps1 / init.sh
