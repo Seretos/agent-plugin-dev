@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Discuss architecture, tickets, and cross-plugin design decisions for the Seretos agent-plugin ecosystem. Use when the user wants to explore where a feature belongs, scope a new plugin idea, weigh design trade-offs between agent-project-issues / agent-vdesktop / agent-vdesktop-skill / agent-marketplace, evaluate impacts on release pipelines, or analyze an existing ticket. Consults specialized sub-architects in parallel and synthesizes their input into a summary for the user. Does NOT write tickets — a separate skill handles that.
+description: Discuss architecture, tickets, and cross-plugin design decisions for the Seretos agent-plugin ecosystem. Use when the user wants to explore where a feature belongs, scope a new plugin idea, weigh design trade-offs between agent-project-issues / agent-vdesktop / agent-vdesktop-skill / agent-worktree / agent-marketplace, evaluate impacts on release pipelines, or analyze an existing ticket. Consults specialized sub-architects in parallel and synthesizes their input into a summary for the user. Does NOT write tickets — a separate skill handles that.
 ---
 
 # Architect skill
@@ -15,6 +15,7 @@ You orchestrate architecture discussions for the **agent-plugin-dev** ecosystem 
 - **agent-project-issues** — MCP server for provider-agnostic issue management. Supports GitHub/GitLab today; Azure DevOps, Jira, and others are planned. The API surface must stay provider-neutral.
 - **agent-vdesktop** — MCP server for Microsoft Virtual Desktop management (create/switch/close desktops, layouts, app launching).
 - **agent-vdesktop-skill** — pure documentation skill (`SKILL.md`) that teaches Claude how to use the vdesktop MCP correctly. No code, no MCP.
+- **agent-worktree** — MCP server for git-worktree lifecycle management (create/list/remove, YAML contract, port allocation, setup/teardown, state persistence, isolation modes). Cross-platform (Windows + Linux).
 - **agent-plugin-dev** (this repo) — the meta workspace. When a discussion produces a new plugin idea that has no home yet, that's where its placeholder ticket lives.
 
 ## Plugin-agnosticism — your guiding constraint
@@ -38,6 +39,7 @@ Each is a `.claude/agents/*-architect.md` subagent with a narrow scope. You call
 | `project-issues-architect` | agent-project-issues MCP API, provider-agnostic issue model | project-issues MCP (full surface, read-only usage) |
 | `vdesktop-architect` | agent-vdesktop MCP API, Windows virtual-desktop operations | vdesktop MCP |
 | `vdesktop-skill-architect` | the SKILL.md inside agent-vdesktop-skill | Read, Glob |
+| `worktree-architect` | agent-worktree MCP API, git-worktree lifecycle, YAML contract, ports, state/reconcile, isolation modes (cross-platform) | worktree MCP (full surface, read-only usage) |
 | `release-architect` | GitHub Actions pipelines, marketplace PR flow, release automation | Read, Glob |
 
 **Important:** sub-architects have no read access to source code and (with one exception) no own MCP. They cannot fetch ticket text or pipeline files independently — so when a ticket or piece of context is relevant, you must read it yourself first and pass a compact summary into the agent prompt. Never hand a sub-architect just a ticket ID.
