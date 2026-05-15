@@ -24,7 +24,7 @@ You guide the user through adding a **new plugin** to the `agent-plugin-dev` met
 Ask the user (use `AskUserQuestion` when multiple options exist, plain prose when a name is needed):
 
 1. **Plugin type:**
-   - `python-mcp` — Python source compiled to a single Windows `.exe` via PyInstaller, exposes one or more MCP servers. (Reference: `agent-vdesktop`, `agent-project-issues`.)
+   - `python-mcp` — Python source compiled to a single self-contained binary via PyInstaller (default: Windows `.exe` + Linux ELF; see question 6 below for the Windows-only override), exposes one or more MCP servers. (Reference: `agent-project-issues`, `agent-worktree` for multi-OS; `agent-vdesktop` for Windows-only.)
    - `skill-plugin` — pure documentation skill, no binary, no MCP. (Reference: `agent-vdesktop-skill`.)
    - If the user wants both, run the skill twice with two separate plugin names — they should ship as independent repos.
 
@@ -36,11 +36,24 @@ Ask the user (use `AskUserQuestion` when multiple options exist, plain prose whe
 3. **Description** — one-sentence, end-user-facing. Show the user what's used in the comparable existing plugins (read one as example) and offer a draft they can edit. If the conversation has enough context to write a strong draft, just propose it and ask for confirmation.
 
 4. **Short identifiers** (only for `python-mcp`). Derive automatically from the plugin name and confirm with the user:
-   - `short_name` — drop the `agent-` prefix. Example: `agent-newthing` → `newthing`. Used as the MCP server key, the `.exe` filename, and the `.spec` filename.
+   - `short_name` — drop the `agent-` prefix. Example: `agent-newthing` → `newthing`. Used as the MCP server key, the binary filename (with `.exe` suffix on Windows), and the `.spec` filename.
    - `package_name` — `{short_name}_plugin` with hyphens turned into underscores. Example: `newthing_plugin`. Used as the Python package directory under `src/`.
    - `SHORT_NAME_UPPER` — `short_name` upper-cased with hyphens replaced by underscores. Example: `NEWTHING`. Used as the env-var prefix for `*_PLUGIN_ROOT`.
 
 5. **Skill slug** (only for `skill-plugin`) — typically the same as `short_name` derived above. Used as the directory name under `skills/`.
+
+6. **OS targets** (only for `python-mcp`). Ask: *"Should this plugin ship Linux + Windows binaries, or Windows-only?"*
+
+   - **Default — `[windows, linux]`.** Most MCP servers are I/O- and HTTP-bound and have no native-Windows dependency. The shipped template is wired this way out of the box: `plugin.json`'s `command` is extensionless (`bin/{{short_name}}`), `release.yml` runs a stamp → matrix-build → assembly pipeline, `test.yml` matrices over `windows-latest` + `ubuntu-22.04`, `build.ps1` runs under both Windows PowerShell 5.1 and `pwsh` on Linux. **You do nothing extra to get multi-OS.**
+
+   - **Windows-only override — `[windows]`.** Pick this only if the plugin genuinely depends on Win32 APIs (COM, `pyvda`, `pywin32`, `comtypes`) — reference plugin: `agent-vdesktop`. If the user picks `[windows]`, after the standard template copy walk you must additionally:
+     1. Edit `.github/workflows/release.yml`: remove the `ubuntu-22.04` row from the `build` job's `matrix.include`; in the assembly job drop the `bin/{{short_name}}` (Linux binary) existence-check and `chmod +x`; in the orphan-branch push step drop `bin/{{short_name}}` from the `git add` / `git update-index --chmod=+x` calls.
+     2. Edit `.github/workflows/test.yml`: drop `ubuntu-22.04` from `matrix.os`.
+     3. Edit `.claude-plugin/plugin.json`: change `command` to `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`.
+
+     Apply these edits with `Edit` after the bulk copy finishes — they're surgical and the template's comments call out each spot.
+
+   Surface the recommendation clearly: *"Default is multi-OS. Pick Windows-only only if you know the plugin uses Win32-specific bindings."* Remember the chosen value as `OS_TARGETS` so you can apply the override in Phase 3 if needed.
 
 ## Phase 2 — User does GitHub prep (wait for confirmation)
 
@@ -78,6 +91,8 @@ Apply these substitutions to **file contents** and to **path segments** (directo
 
 Read `git config user.name` once at the start of Phase 3 with `Bash` and use the result as `{{author_name}}`. If empty, ask the user.
 
+`OS_TARGETS` is **state, not a placeholder** — it doesn't appear in any template file. It drives a post-copy override step (Phase 3.5 below) for the Windows-only case. The default `[windows, linux]` requires no edits at all.
+
 ### Copying procedure
 
 Walk the template tree manually (don't shell out to `cp -r` — placeholder-renames must happen during the walk). For each entry:
@@ -87,6 +102,18 @@ Walk the template tree manually (don't shell out to `cp -r` — placeholder-rena
 - If neither name nor content contains placeholders, just copy the bytes.
 
 Use `Glob` over `.claude/skills/operations/templates/<type>/**/*` to enumerate. Use `Read` + `Write` for each file. Don't try to be clever with `Bash` recursive copy — Windows paths and template renames will trip you up.
+
+### OS_TARGETS post-copy override (python-mcp only)
+
+If the user chose `OS_TARGETS = [windows, linux]` (the default), **skip this section** — the template is already wired for multi-OS.
+
+If the user chose `OS_TARGETS = [windows]`, apply the surgical edits enumerated in Phase 1 question 6 to the freshly copied tree:
+
+1. `.github/workflows/release.yml` — remove the `ubuntu-22.04` matrix row from the `build` job, drop the Linux-binary assertion + `chmod +x` from the assembly job's "Build merged staging tree" step, and drop the Linux-binary `git add` / `git update-index --chmod=+x` calls from the orphan-branch push step.
+2. `.github/workflows/test.yml` — drop `ubuntu-22.04` from `matrix.os`.
+3. `.claude-plugin/plugin.json` — change `command` from `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}` to `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`.
+
+Use the `Edit` tool for each substitution (the spots are clearly delimited by comments in the template). Don't delete the Linux-only steps in `build.ps1` — the script branches on `$IsWindows` at runtime, so a Windows-only matrix simply never exercises the Linux side.
 
 ### Git wiring (local only)
 
@@ -152,7 +179,7 @@ The script is idempotent. It will:
 Give the user a tight handoff message covering:
 
 1. `cd plugins/agent-{name} && git push -u origin main`
-2. (Python-MCP only) Local build smoke test: `./scripts/build.ps1 -Clean` — should produce `bin/{{short_name}}.exe` and pass the MCP `initialize` handshake.
+2. (Python-MCP only) Local build smoke test: `./scripts/build.ps1 -Clean` — on Windows produces `bin/{{short_name}}.exe`, on Linux produces `bin/{{short_name}}` (extensionless). Either way it must pass the MCP `initialize` handshake.
 3. To activate locally, add to `.claude/settings.local.json`:
    ```json
    "enabledPlugins": { "agent-{name}@dev-marketplace": true }
@@ -172,7 +199,7 @@ Then ask if there's anything they want to customize before the first commit (e.g
 
 Templates live under `.claude/skills/operations/templates/`:
 
-- `python-mcp/` — full Python-MCP plugin tree (15 files). Reference implementations: `plugins/agent-vdesktop/`, `plugins/agent-project-issues/`.
+- `python-mcp/` — full Python-MCP plugin tree (multi-OS by default — Windows + Linux). Reference implementations: `plugins/agent-project-issues/` and `plugins/agent-worktree/` (multi-OS); `plugins/agent-vdesktop/` (post-scaffold Windows-only override).
 - `skill-plugin/` — pure-Skill plugin tree (7 files). Reference implementation: `plugins/agent-vdesktop-skill/`.
 
 Templates use the placeholder set listed in Phase 3. Filenames and directory names that include placeholders must be renamed during the copy walk.

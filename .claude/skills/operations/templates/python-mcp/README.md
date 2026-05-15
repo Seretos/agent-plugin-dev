@@ -11,14 +11,14 @@
 /plugin install {{plugin_name}}@agent-marketplace
 ```
 
-Self-contained `.exe` — no Python, no `pip install`, no dependencies.
+Self-contained binary — no Python, no `pip install`, no dependencies. The release zip ships native binaries for both Windows (`{{short_name}}.exe`) and Linux (`{{short_name}}`); the host OS auto-selects the right one.
 
 ## Alternative installs
 
 ### From the GitHub Releases page
 
 1. Download `{{plugin_name}}-<version>.zip` from [Releases](https://github.com/Seretos/{{plugin_name}}/releases).
-2. Unpack to a stable folder (e.g. `C:\Users\<you>\.claude\plugins\{{plugin_name}}\`).
+2. Unpack to a stable folder (e.g. `C:\Users\<you>\.claude\plugins\{{plugin_name}}\` on Windows, `~/.claude/plugins/{{plugin_name}}/` on Linux).
 3. In Claude Code:
    ```
    /plugin install <path-to-unpacked-folder>
@@ -36,13 +36,12 @@ Then `/plugin install <cloned-path>` in Claude Code.
 
 ### Build from source
 
-Requires Python 3.11+ (standard python.org installer with the `py` launcher).
+Requires Python 3.11+ (standard python.org installer with the `py` launcher on Windows; `python3` on Linux).
 
 ```powershell
 git clone https://github.com/Seretos/{{plugin_name}}.git
 cd {{plugin_name}}
-py -3 -m pip install -e ".[build]"
-.\scripts\build.ps1 -Clean -Package
+pwsh -File scripts/build.ps1 -Clean -Package
 ```
 
-Output: `bin/{{short_name}}.exe` plus `dist/{{plugin_name}}-<version>.zip`. Then install via `/plugin install <path>`.
+Output on Windows: `bin/{{short_name}}.exe`. On Linux: `bin/{{short_name}}`. Then install via `/plugin install <path>`.
