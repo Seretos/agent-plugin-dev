@@ -1,6 +1,6 @@
 # {{plugin_name}}
 
-MCP server that ships as a self-contained Windows `.exe` (PyInstaller-frozen Python). End users don't need a Python toolchain.
+MCP server that ships as a self-contained binary (PyInstaller-frozen Python). End users don't need a Python toolchain.
 
 ## Layout
 
@@ -9,23 +9,46 @@ src/{{package_name}}/            # Python source (src-layout)
   server.py                       # FastMCP entry point, wires the tools
   __main__.py                     # python -m / PyInstaller entry
 
-tests/                          # pytest, runs on every push (test.yml)
-scripts/build.ps1               # PyInstaller wrapper + smoke test + optional packaging
-{{short_name}}.spec               # PyInstaller config
+tests/                          # pytest, runs on every push (test.yml matrix: windows-latest + ubuntu-22.04)
+scripts/build.ps1               # cross-platform pwsh: PyInstaller wrapper + smoke test + staging
+{{short_name}}.spec               # PyInstaller config (output extension picked by host OS)
 pyproject.toml                  # setuptools (package-dir = src/) + pytest config
-.claude-plugin/plugin.json      # plugin manifest, points at bin/{{short_name}}.exe
+.claude-plugin/plugin.json      # plugin manifest; command is the extensionless bin/{{short_name}}
 SECURITY.md                     # threat model — extend per tool surface
 
 .github/workflows/
-  test.yml                      # pytest on every push and PR
-  release.yml                   # manual-dispatch full release flow
+  test.yml                      # pytest matrix on every push and PR
+  release.yml                   # manual-dispatch multi-OS release (stamp -> matrix-build -> assemble)
   dispatch.yml                  # manual recovery: re-send marketplace dispatch
 ```
+
+## OS_TARGETS
+
+Default: `[windows, linux]`. The pipeline produces native binaries for both platforms and ships them inside a single release zip.
+
+- `plugin.json`'s `command` is `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}` (no extension). On Windows the host OS resolves that to `{{short_name}}.exe`; on Linux to `{{short_name}}`. One manifest serves both platforms.
+- `release.yml` is a three-stage pipeline:
+  1. **stamp** (Linux) — writes the version into `pyproject.toml` + `.claude-plugin/plugin.json` and uploads them as an artifact so every downstream job pulls the same stamped sources.
+  2. **build** (matrix `windows-latest` + `ubuntu-22.04`) — each runner calls `scripts/build.ps1 -Clean -Package` and uploads its `bin/` payload as `bin-<os>`.
+  3. **assemble** (Linux) — merges the per-OS bins into a single `build/stage/{{plugin_name}}/bin/` tree, builds the release zip with correct Unix mode bits via Python's `zipfile`, force-pushes the orphan `release` branch, creates the GitHub Release, and dispatches to the marketplace.
+
+### Windows-only override
+
+If this plugin is genuinely Win32-bound (e.g. depends on `pyvda`, `pywin32`, `comtypes` for COM, like agent-vdesktop), reduce `OS_TARGETS` to `[windows]`:
+
+1. In `.github/workflows/release.yml`:
+   - Remove the `ubuntu-22.04` row from the `build` job's `matrix.include`.
+   - In the assembly job's "Build merged staging tree" step, drop the `bin/{{short_name}}` (Linux binary) assertion and the `chmod +x` on it.
+   - In "Push orphan release branch", drop `bin/{{short_name}}` from the `git add` / `git update-index --chmod=+x` calls.
+2. In `.github/workflows/test.yml`: drop `ubuntu-22.04` from the `matrix.os` list.
+3. In `.claude-plugin/plugin.json`: change `command` back to `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`.
+
+The multi-OS shape is the default because most MCP servers are I/O- and HTTP-bound and have no native-Windows dependency. Windows-only is the deliberate exception, not the rule.
 
 ## Branches
 
 - `main` — source of truth. All edits go here.
-- `release` — orphan branch, force-pushed by `release.yml`. Contains only install-ready files: `.claude-plugin/plugin.json`, `bin/{{short_name}}.exe`, `README.md`. Clients clone at the version tag (e.g. `{{plugin_name}}--v0.0.1`).
+- `release` — orphan branch, force-pushed by `release.yml`. Contains only install-ready files: `.claude-plugin/plugin.json`, `bin/{{short_name}}.exe`, `bin/{{short_name}}`, `README.md`. Clients clone at the version tag (e.g. `{{plugin_name}}--v0.0.1`).
 
 The release branch shares no history with main. Don't try to merge between them.
 
@@ -43,11 +66,8 @@ The workflow:
 1. Validates `X.Y.Z` is semver.
 2. Fails if tag `{{plugin_name}}--vX.Y.Z` already exists.
 3. Stamps the version into `pyproject.toml` and `.claude-plugin/plugin.json` (CI checkout only — never pushed back to main).
-4. Runs `scripts/build.ps1 -Clean -Package` (PyInstaller → smoke test → ZIP).
-5. Stashes the ZIP outside the working tree (needed because step 6 wipes it).
-6. Force-pushes the orphan `release` branch from the staged install-ready tree.
-7. Creates the `{{plugin_name}}--vX.Y.Z` tag on that commit and a GitHub Release with the ZIP attached.
-8. POSTs to `Seretos/agent-marketplace/dispatches` with the plugin metadata, using `MARKETPLACE_DISPATCH_TOKEN`.
+4. Builds binaries on each OS in the matrix and uploads them as `bin-<os>` artifacts.
+5. Assembly job merges every per-OS payload, packs the release zip with Unix-mode bits, force-pushes the orphan `release` branch, creates the GitHub Release with the zip attached, and POSTs to `Seretos/agent-marketplace/dispatches` with the plugin metadata (using `MARKETPLACE_DISPATCH_TOKEN`).
 
 `pyproject.toml`'s `version` field is **not** load-bearing for releases. The workflow input drives everything.
 
@@ -57,13 +77,15 @@ The workflow:
 
 ## Build conventions (`scripts/build.ps1`)
 
-- Compatible with **Windows PowerShell 5.1** (the system default) AND PowerShell 7.
+- Cross-platform: runs under **Windows PowerShell 5.1**, PowerShell 7 on Windows, AND `pwsh` on Linux. PS 5.1 lacks the auto `$IsWindows` variable so the script derives it from `$env:OS`.
+- Output filename: `bin/{{short_name}}.exe` on Windows, `bin/{{short_name}}` on Linux (no extension). The Linux binary is explicitly `chmod +x`ed after copy.
 - No global `$ErrorActionPreference = 'Stop'` — PyInstaller writes heavily to stderr, which PS 5.1 wraps as ErrorRecord and would trip a global Stop.
-- Python discovery prefers `py.exe -3` locally and `python.exe` in `$env:CI` (so `actions/setup-python` is honored).
-- The smoke test runs an MCP `initialize` handshake against the freshly built `.exe`. The build fails if the handshake fails.
+- Python discovery: prefers `py.exe -3` on Windows locally, falls back to `python` / `python3` (which is what `actions/setup-python` installs).
+- The smoke test runs an MCP `initialize` handshake against the freshly built binary. The build fails if the handshake fails.
+- `-Package` stages `build/stage/{{plugin_name}}/` with this OS's binary only — `release.yml`'s assembly job merges the per-OS stages into the final zip.
 
 ## PyInstaller / src-layout notes
 
 - The Python package is `{{package_name}}` under `src/`. `pyproject.toml` declares `package-dir = { "" = "src" }` and `[tool.pytest.ini_options] pythonpath = ["src"]`.
 - `{{short_name}}.spec` references `src/{{package_name}}/__main__.py` as the entry and `pathex=[ROOT / "src"]`. Adjust both if the layout ever moves.
-- If you add native-binding dependencies (e.g. `pyvda`, `pywin32`, `comtypes`), use `collect_all(...)` for them in `{{short_name}}.spec` so PyInstaller picks up lazy-generated submodules.
+- If you add native-binding dependencies (e.g. `pyvda`, `pywin32`, `comtypes`), use `collect_all(...)` for them in `{{short_name}}.spec` so PyInstaller picks up lazy-generated submodules — and remember those native bindings are usually a sign you also want to flip `OS_TARGETS` to `[windows]` (see the override section above).

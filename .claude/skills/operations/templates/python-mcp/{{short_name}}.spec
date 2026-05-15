@@ -1,11 +1,13 @@
 # PyInstaller spec for the {{plugin_name}} MCP server.
 #
-# Produces a single-file Windows .exe under dist/{{short_name}}.exe that contains
-# the Python interpreter, the MCP runtime, and the package itself.
+# Produces a single-file self-contained binary that bundles the Python
+# interpreter, the MCP runtime, and the package itself. Output extension is
+# host-OS-dependent — `.exe` on Windows, no extension on Linux. PyInstaller
+# handles the per-OS suffix automatically; this spec is OS-agnostic.
 #
-# Build:    py -3 -m PyInstaller {{short_name}}.spec --clean --noconfirm
-# Output:   dist\{{short_name}}.exe
-# Copy to:  bin\{{short_name}}.exe  (handled by scripts/build.ps1)
+# Build:    pwsh -File scripts/build.ps1 -Clean
+# Output:   dist/{{short_name}}.exe on Windows, dist/{{short_name}} on Linux
+# Copy to:  bin/{{short_name}}(.exe)  (handled by scripts/build.ps1)
 
 # ruff: noqa
 from pathlib import Path
