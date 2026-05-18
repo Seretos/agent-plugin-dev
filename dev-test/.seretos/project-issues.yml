@@ -10,10 +10,6 @@ projects:
       issues:
         create: true
         modify: true
-      pulls:
-        create: true
-        modify: true
-        merge: true
 
   - id: agent-vdesktop
     description: Microsoft Virtual Desktop management MCP plugin for Claude Code
