@@ -55,6 +55,7 @@ Each subdirectory has its own `AGENTS.md` with detail on conventions, files, and
 ## Conventions for agents working here
 
 - **The project root IS a git repo** (`Seretos/agent-plugin-dev`). The 4 sub-repos under `agent-marketplace/` and `plugins/` are independently versioned and gitignored here — don't try to `git add` their content at the root level. Edits inside a sub-repo go through its own git history (cd into the sub-repo first).
+- **Local plugin testing requires launching Claude from `dev-test/`.** The dev-test marketplace points at the symlinked local plugin paths, so any branch checked out under `plugins/<name>/` is picked up on session start (and on `/reload-plugins`). A Claude session launched from elsewhere uses the cached version from the real `agent-marketplace` registry and won't see your local changes.
 - Each subdirectory under `plugins/` and `agent-marketplace/` is an independent repo with its own remote, history, and CI.
 - The user does the GitHub-side actions (repo creation, secret setup, pushing). Don't push or create remote artifacts unless explicitly asked.
 - Marketplace tags are NOT used. `{plugin-name}--v{version}` tags were tried early and removed — Claude Code resolves versions from marketplace.json's content, not from tags on the marketplace repo.
