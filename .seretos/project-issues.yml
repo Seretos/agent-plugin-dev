@@ -66,3 +66,17 @@ projects:
         create: true
         modify: true
         merge: true
+
+  - id: agent-database-manager
+    description: ""
+    provider: gitlab
+    path: Seredos/agent-database-manager
+    token_env: GITLAB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
