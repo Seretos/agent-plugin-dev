@@ -5,6 +5,10 @@
 # dev-test plugin symlinks (created by init script)
 /dev-test/plugins/
 
+# dev-test scratch repos (their own git roots, pushed to standalone remotes)
+/dev-test/github-tests/
+/dev-test/gitlab-tests/
+
 # Local Claude Code user overrides
 **/settings.local.json
 

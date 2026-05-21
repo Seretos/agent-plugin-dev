@@ -80,3 +80,31 @@ projects:
         create: true
         modify: true
         merge: true
+
+  - id: github-tests
+    description: ""
+    provider: github
+    path: Seretos/github-tests
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
+  - id: gitlab-tests
+    description: ""
+    provider: gitlab
+    path: Seredos/gitlab-tests
+    token_env: GITLAB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
