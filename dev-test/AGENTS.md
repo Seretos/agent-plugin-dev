@@ -21,7 +21,7 @@ Use them freely. You may:
 - Use `Bash` / `PowerShell` against the **local clones** to run `git` commands when a test needs real refs to exist remotely. Typical case: open a PR via the MCP, but the head branch has to exist first → cd into the clone, create branch, commit, push.
 - Leave artifacts behind. Tickets, PRs, branches, and orphan commits from prior runs are expected; you don't need to clean up.
 
-Tokens `GITHUB_TOKEN` and `GITLAB_TOKEN` are expected to be set in your shell environment (`repo` / `api` scope). If a write fails with auth errors, surface that as a setup finding instead of debugging it.
+If a write fails with an auth error, surface that as a setup finding instead of trying to debug it.
 
 **Important — this is the only Bash/git carve-out.** The hard constraint above (no source inspection of the MCP under test) still holds everywhere else. Bash is for git operations in the two sandbox clones, period. Don't use it to peek at plugin code, configs, or anything outside those two folders.
 
