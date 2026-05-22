@@ -30,6 +30,18 @@
       "path": "plugins/agent-worktree",
       "remote": "git@github.com:Seretos/agent-worktree.git",
       "branch": "main"
+    },
+    {
+      "name": "lib-python-config",
+      "path": "libs/lib-python-config",
+      "remote": "git@github.com:Seretos/lib-python-config.git",
+      "branch": "main"
+    },
+    {
+      "name": "lib-python-projects",
+      "path": "libs/lib-python-projects",
+      "remote": "git@github.com:Seretos/lib-python-projects.git",
+      "branch": "main"
     }
   ],
   "devTestSymlinks": [
