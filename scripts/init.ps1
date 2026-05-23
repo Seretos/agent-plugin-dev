@@ -34,7 +34,7 @@ foreach ($repo in $manifest.repos) {
         continue
     }
     if ((Test-Path $target) -and (Get-ChildItem $target -Force | Measure-Object).Count -gt 0) {
-        Write-Host "  [warn] $($repo.path) exists and is not empty but has no .git — skipping" -ForegroundColor Yellow
+        Write-Host "  [warn] $($repo.path) exists and is not empty but has no .git - skipping" -ForegroundColor Yellow
         continue
     }
 
@@ -60,7 +60,7 @@ foreach ($link in $manifest.mcpTestSymlinks) {
         continue
     }
     if (-not (Test-Path $targetPath)) {
-        Write-Host "  [warn] target $($link.to) does not exist yet — skipping" -ForegroundColor Yellow
+        Write-Host "  [warn] target $($link.to) does not exist yet - skipping" -ForegroundColor Yellow
         continue
     }
 
@@ -85,7 +85,7 @@ foreach ($link in $manifest.mcpTestSymlinks) {
 
 if ($failedLinks.Count -gt 0) {
     Write-Host ""
-    Write-Host "[warn] Could not create $($failedLinks.Count) symlink(s) — missing permission." -ForegroundColor Yellow
+    Write-Host "[warn] Could not create $($failedLinks.Count) symlink(s) - missing permission." -ForegroundColor Yellow
     Write-Host "       Run these commands from an elevated (Admin) PowerShell:" -ForegroundColor Yellow
     Write-Host ""
     foreach ($f in $failedLinks) {
