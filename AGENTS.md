@@ -6,7 +6,7 @@ A modular plugin platform for AI coding agents (Claude Code et al.). Each plugin
 
 ```
 agent-plugin-dev/             # this directory — meta-repo Seretos/agent-plugin-dev
-├── workspace.json            # manifest of sub-repos + dev-test symlinks
+├── workspace.json            # manifest of sub-repos + mcp-test symlinks
 ├── scripts/init.ps1|.sh      # bootstrap: clone sub-repos + create symlinks
 ├── agent-marketplace/        # own repo: Seretos/agent-marketplace (gitignored here)
 │                             # The registry. Metadata only, no plugin code.
@@ -15,7 +15,7 @@ agent-plugin-dev/             # this directory — meta-repo Seretos/agent-plugi
 │   ├── agent-vdesktop-skill/ # own repo: Seretos/agent-vdesktop-skill
 │   ├── agent-project-issues/ # own repo: Seretos/agent-project-issues
 │   └── agent-worktree/       # own repo: Seretos/agent-worktree
-├── dev-test/                 # local marketplace (directory source) for daily dev
+├── mcp-test/                 # local marketplace (directory source) for daily dev
 └── prod-test/                # test setup against the real GitHub marketplace
 ```
 
@@ -55,7 +55,7 @@ Each subdirectory has its own `AGENTS.md` with detail on conventions, files, and
 ## Conventions for agents working here
 
 - **The project root IS a git repo** (`Seretos/agent-plugin-dev`). The 4 sub-repos under `agent-marketplace/` and `plugins/` are independently versioned and gitignored here — don't try to `git add` their content at the root level. Edits inside a sub-repo go through its own git history (cd into the sub-repo first).
-- **Local plugin testing requires launching Claude from `dev-test/`.** The dev-test marketplace points at the symlinked local plugin paths, so any branch checked out under `plugins/<name>/` is picked up on session start (and on `/reload-plugins`). A Claude session launched from elsewhere uses the cached version from the real `agent-marketplace` registry and won't see your local changes.
+- **Local plugin testing requires launching Claude from `mcp-test/`.** The mcp-test marketplace points at the symlinked local plugin paths, so any branch checked out under `plugins/<name>/` is picked up on session start (and on `/reload-plugins`). A Claude session launched from elsewhere uses the cached version from the real `agent-marketplace` registry and won't see your local changes.
 - Each subdirectory under `plugins/` and `agent-marketplace/` is an independent repo with its own remote, history, and CI.
 - The user does the GitHub-side actions (repo creation, secret setup, pushing). Don't push or create remote artifacts unless explicitly asked.
 - Marketplace tags are NOT used. `{plugin-name}--v{version}` tags were tried early and removed — Claude Code resolves versions from marketplace.json's content, not from tags on the marketplace repo.

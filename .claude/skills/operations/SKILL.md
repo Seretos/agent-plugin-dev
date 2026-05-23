@@ -1,11 +1,11 @@
 ---
 name: operations
-description: Use to onboard a new plugin into the Seretos agent-plugin ecosystem. Scaffolds a Python-MCP or pure-Skill plugin in plugins/<name>/, sets up the GitHub release pipeline (release.yml, dispatch.yml, marketplace integration via MARKETPLACE_DISPATCH_TOKEN), patches workspace.json + dev-test marketplace.json, and runs init.ps1 to wire up symlinks. User does the GitHub-side actions (repo creation, secret setup, push); the skill does the local scaffolding and meta-repo plumbing. Trigger on requests like "I want to add a new plugin", "scaffold a new MCP", "set up a new skill plugin", "integrate <name> into the ecosystem".
+description: Use to onboard a new plugin into the Seretos agent-plugin ecosystem. Scaffolds a Python-MCP or pure-Skill plugin in plugins/<name>/, sets up the GitHub release pipeline (release.yml, dispatch.yml, marketplace integration via MARKETPLACE_DISPATCH_TOKEN), patches workspace.json + mcp-test marketplace.json, and runs init.ps1 to wire up symlinks. User does the GitHub-side actions (repo creation, secret setup, push); the skill does the local scaffolding and meta-repo plumbing. Trigger on requests like "I want to add a new plugin", "scaffold a new MCP", "set up a new skill plugin", "integrate <name> into the ecosystem".
 ---
 
 # operations — Plugin Onboarding
 
-You guide the user through adding a **new plugin** to the `agent-plugin-dev` meta-repo. The result: a fully scaffolded plugin under `plugins/<name>/` with its own git repo, release pipeline wired to the marketplace, and meta-repo files patched so `dev-test` picks it up.
+You guide the user through adding a **new plugin** to the `agent-plugin-dev` meta-repo. The result: a fully scaffolded plugin under `plugins/<name>/` with its own git repo, release pipeline wired to the marketplace, and meta-repo files patched so `mcp-test` picks it up.
 
 ## What you do vs. what the user does
 
@@ -14,7 +14,7 @@ You guide the user through adding a **new plugin** to the `agent-plugin-dev` met
 | Ask the clarifying questions in Phase 1 | Decide name, type, description |
 | Render templates with placeholder substitution | Create the GitHub repo `Seretos/agent-{name}` |
 | `git init` + `git remote add` + initial commit (local only) | Create the fine-grained PAT |
-| Patch `workspace.json` + `dev-test/.claude-plugin/marketplace.json` | Add `MARKETPLACE_DISPATCH_TOKEN` as Actions secret |
+| Patch `workspace.json` + `mcp-test/.claude-plugin/marketplace.json` | Add `MARKETPLACE_DISPATCH_TOKEN` as Actions secret |
 | Re-run `scripts/init.ps1` | `git push -u origin main` from the new plugin dir |
 
 **Never** push, never call `gh repo create`, never set secrets remotely. That's a hard convention from the repo root README ("The user does the GitHub-side actions").
@@ -145,15 +145,17 @@ Read the file, parse the JSON, append to `repos[]` (preserving the order — app
 }
 ```
 
-And to `devTestSymlinks[]`:
+And to `mcpTestSymlinks[]`:
 
 ```json
-{ "from": "dev-test/plugins/agent-{name}", "to": "plugins/agent-{name}" }
+{ "from": "mcp-test/plugins/agent-{name}", "to": "plugins/agent-{name}" }
 ```
 
 Write the file back with 2-space indentation, matching the existing formatting style. **Use `Edit` rather than `Write`** — preserve the file's existing trailing newline / shape. Find the closing `]` of `repos` and inject the new object just before it.
 
-### 4.2 `dev-test/.claude-plugin/marketplace.json`
+### 4.2 `mcp-test/.claude-plugin/marketplace.json`
+
+> **Note:** `mcp-test/` is its own standalone git repo (gitignored by the meta-repo). This edit is versioned in the `mcp-test` repo, not in `agent-plugin-dev` — commit it there if you want it tracked.
 
 Append to `plugins[]`:
 
@@ -171,7 +173,7 @@ Same approach: `Edit` to inject before the closing `]`, preserve formatting.
 
 The script is idempotent. It will:
 - Skip cloning the new plugin (already exists locally with `.git`).
-- Try to create the `dev-test/plugins/agent-{name}` symlink.
+- Try to create the `mcp-test/plugins/agent-{name}` symlink.
 - If symlink creation fails (no Developer Mode / no admin), it prints the `New-Item` command for the user to run from an elevated PowerShell. That's the standard fallback — just relay the command to the user.
 
 ## Phase 5 — Handoff

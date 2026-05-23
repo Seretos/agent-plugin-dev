@@ -1,13 +1,10 @@
 # Sub-repos managed separately via scripts/init.*
 /agent-marketplace/
 /plugins/
+/libs/
 
-# dev-test plugin symlinks (created by init script)
-/dev-test/plugins/
-
-# dev-test scratch repos (their own git roots, pushed to standalone remotes)
-/dev-test/github-tests/
-/dev-test/gitlab-tests/
+# mcp-test is a standalone git repo, embedded in the working tree
+/mcp-test/
 
 # Local Claude Code user overrides
 **/settings.local.json

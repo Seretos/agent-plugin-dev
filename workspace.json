@@ -1,5 +1,5 @@
 {
-  "description": "Workspace manifest. scripts/init.* clones each repo and creates dev-test symlinks.",
+  "description": "Workspace manifest. scripts/init.* clones each repo and creates mcp-test symlinks.",
   "repos": [
     {
       "name": "agent-marketplace",
@@ -42,12 +42,18 @@
       "path": "libs/lib-python-projects",
       "remote": "git@github.com:Seretos/lib-python-projects.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-python-developer-ticket-workflow",
+      "path": "plugins/agent-python-developer-ticket-workflow",
+      "remote": "git@github.com:Seretos/agent-python-developer-ticket-workflow.git",
+      "branch": "main"
     }
   ],
-  "devTestSymlinks": [
-    { "from": "dev-test/plugins/agent-vdesktop",       "to": "plugins/agent-vdesktop" },
-    { "from": "dev-test/plugins/agent-vdesktop-skill", "to": "plugins/agent-vdesktop-skill" },
-    { "from": "dev-test/plugins/agent-project-issues", "to": "plugins/agent-project-issues" },
-    { "from": "dev-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" }
+  "mcpTestSymlinks": [
+    { "from": "mcp-test/plugins/agent-vdesktop",       "to": "plugins/agent-vdesktop" },
+    { "from": "mcp-test/plugins/agent-vdesktop-skill", "to": "plugins/agent-vdesktop-skill" },
+    { "from": "mcp-test/plugins/agent-project-issues", "to": "plugins/agent-project-issues" },
+    { "from": "mcp-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" }
   ]
 }

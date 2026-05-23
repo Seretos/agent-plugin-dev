@@ -2,7 +2,7 @@
 # Bootstraps the agent-plugin-dev workspace.
 #
 # - Clones each repo listed in ../workspace.json (skips repos already present).
-# - Creates the dev-test/ symlinks that point back to the real plugin repos.
+# - Creates the mcp-test/ symlinks that point back to the real plugin repos.
 # - If symlink creation fails, prints the ln commands so the user can run
 #   them manually with the right permissions.
 #
@@ -51,15 +51,15 @@ for ((i = 0; i < repo_count; i++)); do
 done
 
 echo
-echo "=== Creating dev-test symlinks ==="
+echo "=== Creating mcp-test symlinks ==="
 
 failed_from=()
 failed_target=()
 
-link_count="$(jq '.devTestSymlinks | length' "$manifest")"
+link_count="$(jq '.mcpTestSymlinks | length' "$manifest")"
 for ((i = 0; i < link_count; i++)); do
-    from_rel="$(jq -r ".devTestSymlinks[$i].from" "$manifest")"
-    to_rel="$(jq -r ".devTestSymlinks[$i].to" "$manifest")"
+    from_rel="$(jq -r ".mcpTestSymlinks[$i].from" "$manifest")"
+    to_rel="$(jq -r ".mcpTestSymlinks[$i].to" "$manifest")"
     link_path="$repo_root/$from_rel"
     target_path="$repo_root/$to_rel"
 

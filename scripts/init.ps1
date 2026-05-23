@@ -5,7 +5,7 @@
 
 .DESCRIPTION
   - Clones each repo listed in ../workspace.json (skips repos that are already present).
-  - Creates the dev-test/ symlinks that point back to the real plugin repos.
+  - Creates the mcp-test/ symlinks that point back to the real plugin repos.
   - If symlink creation fails (no Developer Mode and no admin rights), prints
     the New-Item commands so the user can run them from an elevated shell.
 
@@ -47,11 +47,11 @@ foreach ($repo in $manifest.repos) {
 }
 
 Write-Host ""
-Write-Host "=== Creating dev-test symlinks ===" -ForegroundColor Cyan
+Write-Host "=== Creating mcp-test symlinks ===" -ForegroundColor Cyan
 
 $failedLinks = @()
 
-foreach ($link in $manifest.devTestSymlinks) {
+foreach ($link in $manifest.mcpTestSymlinks) {
     $linkPath   = Join-Path $repoRoot $link.from
     $targetPath = Join-Path $repoRoot $link.to
 
