@@ -44,6 +44,12 @@
       "branch": "main"
     },
     {
+      "name": "lib-python-vdesktop",
+      "path": "libs/lib-python-vdesktop",
+      "remote": "git@github.com:Seretos/lib-python-vdesktop.git",
+      "branch": "main"
+    },
+    {
       "name": "agent-python-developer-ticket-workflow",
       "path": "plugins/agent-python-developer-ticket-workflow",
       "remote": "git@github.com:Seretos/agent-python-developer-ticket-workflow.git",

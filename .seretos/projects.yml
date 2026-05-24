@@ -11,6 +11,20 @@ projects:
         create: true
         modify: true
 
+  - id: agent-plugin-dev
+    description: ""
+    provider: github
+    path: Seretos/agent-plugin-dev
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
   - id: agent-vdesktop
     description: Microsoft Virtual Desktop management MCP plugin for Claude Code
     provider: github
@@ -67,6 +81,48 @@ projects:
         modify: true
         merge: true
 
+  - id: lib-python-projects
+    description: ""
+    provider: github
+    path: Seretos/lib-python-projects
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
+  - id: lib-python-vdesktop
+    description: ""
+    provider: github
+    path: Seretos/lib-python-vdesktop
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
+  - id: lib-python-config
+    description: ""
+    provider: github
+    path: Seretos/lib-python-config
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
   - id: agent-database-manager
     description: ""
     provider: gitlab
@@ -100,6 +156,34 @@ projects:
     provider: gitlab
     path: Seredos/gitlab-tests
     token_env: GITLAB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
+  - id: azure-tests
+    description: ""
+    provider: azuredevops
+    path: seredos/azure-tests/azure-tests
+    token_env: AZURE_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: false
+
+  - id: azure-tests2
+    description: ""
+    provider: azuredevops
+    path: seredos/azure-tests/azure-tests2
+    token_env: AZURE_TOKEN
     permissions:
       issues:
         create: true
