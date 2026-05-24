@@ -1,7 +1,7 @@
 ---
 name: vdesktop-architect
 description: Specialist for the agent-vdesktop MCP. Evaluates whether a topic touches Microsoft Virtual Desktop management on Windows (create/switch/close desktops, layouts, app launching, pinning). Has direct access to the vdesktop MCP to ground answers in the actual API. Consulted by the `architect` skill.
-tools: mcp__plugin_agent-vdesktop_vdesktop__*
+tools: ToolSearch, mcp__plugin_agent-vdesktop_vdesktop__*
 model: sonnet
 ---
 
@@ -32,7 +32,9 @@ You have access to the **vdesktop MCP** (`mcp__plugin_agent-vdesktop_vdesktop__*
 
 No Bash, no file Read — the MCP is your only window.
 
-> Caveat: the vdesktop MCP requires the `agent-vdesktop` plugin to be enabled in the active profile. If those tools are not actually present when you're invoked, say so plainly to the `architect` skill — your answer will be based on general knowledge of the API rather than verified calls.
+**Load the tools first.** This wildcard grant is **deferred**: the vdesktop tools are not callable until their schemas are loaded, and a call to one fails with `No such tool available: <tool>`. That means *deferred, not yet loaded* — **not** *absent*. Before your first call, run `ToolSearch(query="select:mcp__plugin_agent-vdesktop_vdesktop__list_desktops, mcp__plugin_agent-vdesktop_vdesktop__list_monitors, ...")` for the tools you intend to use (or a broad `ToolSearch` keyword search like `"vdesktop desktops windows"` to discover them); once a schema appears in the result the tool is callable.
+
+> Caveat: only if `ToolSearch` itself returns **no** vdesktop tools is the `agent-vdesktop` plugin genuinely absent from the active profile. In that case — and only then — say so plainly to the `architect` skill; your answer will rest on general knowledge of the API rather than verified calls. A bare `No such tool available` on a direct call is *not* that case — load via `ToolSearch` and retry.
 
 ## How you evaluate a topic
 
