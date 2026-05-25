@@ -6,10 +6,7 @@
   "mcpServers": {
     "{{short_name}}": {
       "command": "${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}",
-      "args": [],
-      "env": {
-        "{{SHORT_NAME_UPPER}}_PLUGIN_ROOT": "${CLAUDE_PLUGIN_ROOT}"
-      }
+      "args": []
     }
   }
 }

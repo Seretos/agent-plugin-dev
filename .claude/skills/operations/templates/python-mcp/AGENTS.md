@@ -13,7 +13,8 @@ tests/                          # pytest, runs on every push (test.yml matrix: w
 scripts/build.ps1               # cross-platform pwsh: PyInstaller wrapper + smoke test + staging
 {{short_name}}.spec               # PyInstaller config (output extension picked by host OS)
 pyproject.toml                  # setuptools (package-dir = src/) + pytest config
-.claude-plugin/plugin.json      # plugin manifest; command is the extensionless bin/{{short_name}}
+.claude-plugin/plugin.json      # Claude manifest; extensionless bin/{{short_name}} via ${CLAUDE_PLUGIN_ROOT}
+.codex-plugin/plugin.json       # Codex manifest; same surface, command via ${PLUGIN_ROOT}
 SECURITY.md                     # threat model — extend per tool surface
 
 .github/workflows/
@@ -26,9 +27,9 @@ SECURITY.md                     # threat model — extend per tool surface
 
 Default: `[windows, linux]`. The pipeline produces native binaries for both platforms and ships them inside a single release zip.
 
-- `plugin.json`'s `command` is `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}` (no extension). On Windows the host OS resolves that to `{{short_name}}.exe`; on Linux to `{{short_name}}`. One manifest serves both platforms.
+- Both manifests use an extensionless `command` of `bin/{{short_name}}` — `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}` in `.claude-plugin`, `${PLUGIN_ROOT}/bin/{{short_name}}` in `.codex-plugin`. On Windows the host resolves that to `{{short_name}}.exe`; on Linux to `{{short_name}}`. One zip serves both platforms and both hosts.
 - `release.yml` is a three-stage pipeline:
-  1. **stamp** (Linux) — writes the version into `pyproject.toml` + `.claude-plugin/plugin.json` and uploads them as an artifact so every downstream job pulls the same stamped sources.
+  1. **stamp** (Linux) — writes the version into `pyproject.toml` + both plugin manifests (`.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`) and uploads them as an artifact so every downstream job pulls the same stamped sources.
   2. **build** (matrix `windows-latest` + `ubuntu-22.04`) — each runner calls `scripts/build.ps1 -Clean -Package` and uploads its `bin/` payload as `bin-<os>`.
   3. **assemble** (Linux) — merges the per-OS bins into a single `build/stage/{{plugin_name}}/bin/` tree, builds the release zip with correct Unix mode bits via Python's `zipfile`, force-pushes the orphan `release` branch, creates the GitHub Release, and dispatches to the marketplace.
 
@@ -41,14 +42,14 @@ If this plugin is genuinely Win32-bound (e.g. depends on `pyvda`, `pywin32`, `co
    - In the assembly job's "Build merged staging tree" step, drop the `bin/{{short_name}}` (Linux binary) assertion and the `chmod +x` on it.
    - In "Push orphan release branch", drop `bin/{{short_name}}` from the `git add` / `git update-index --chmod=+x` calls.
 2. In `.github/workflows/test.yml`: drop `ubuntu-22.04` from the `matrix.os` list.
-3. In `.claude-plugin/plugin.json`: change `command` back to `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`.
+3. Append `.exe` to the `command` in **both** manifests: `.claude-plugin/plugin.json` → `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`, `.codex-plugin/plugin.json` → `${PLUGIN_ROOT}/bin/{{short_name}}.exe`.
 
 The multi-OS shape is the default because most MCP servers are I/O- and HTTP-bound and have no native-Windows dependency. Windows-only is the deliberate exception, not the rule.
 
 ## Branches
 
 - `main` — source of truth. All edits go here.
-- `release` — orphan branch, force-pushed by `release.yml`. Contains only install-ready files: `.claude-plugin/plugin.json`, `bin/{{short_name}}.exe`, `bin/{{short_name}}`, `README.md`. Clients clone at the version tag (e.g. `{{plugin_name}}--v0.0.1`).
+- `release` — orphan branch, force-pushed by `release.yml`. Contains only install-ready files: `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `bin/{{short_name}}.exe`, `bin/{{short_name}}`, `README.md`. Clients clone at the version tag (e.g. `{{plugin_name}}--v0.0.1`).
 
 The release branch shares no history with main. Don't try to merge between them.
 

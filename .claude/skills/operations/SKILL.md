@@ -38,18 +38,20 @@ Ask the user (use `AskUserQuestion` when multiple options exist, plain prose whe
 4. **Short identifiers** (only for `python-mcp`). Derive automatically from the plugin name and confirm with the user:
    - `short_name` — drop the `agent-` prefix. Example: `agent-newthing` → `newthing`. Used as the MCP server key, the binary filename (with `.exe` suffix on Windows), and the `.spec` filename.
    - `package_name` — `{short_name}_plugin` with hyphens turned into underscores. Example: `newthing_plugin`. Used as the Python package directory under `src/`.
-   - `SHORT_NAME_UPPER` — `short_name` upper-cased with hyphens replaced by underscores. Example: `NEWTHING`. Used as the env-var prefix for `*_PLUGIN_ROOT`.
+   - `SHORT_NAME_UPPER` — `short_name` upper-cased with hyphens replaced by underscores. Example: `NEWTHING`. **The default scaffold doesn't use it** — the manifests ship no `env` block. Derive it only if you add an `env` entry for a binary that reads a `*_PLUGIN_ROOT` variable.
 
 5. **Skill slug** (only for `skill-plugin`) — typically the same as `short_name` derived above. Used as the directory name under `skills/`.
 
 6. **OS targets** (only for `python-mcp`). Ask: *"Should this plugin ship Linux + Windows binaries, or Windows-only?"*
 
-   - **Default — `[windows, linux]`.** Most MCP servers are I/O- and HTTP-bound and have no native-Windows dependency. The shipped template is wired this way out of the box: `plugin.json`'s `command` is extensionless (`bin/{{short_name}}`), `release.yml` runs a stamp → matrix-build → assembly pipeline, `test.yml` matrices over `windows-latest` + `ubuntu-22.04`, `build.ps1` runs under both Windows PowerShell 5.1 and `pwsh` on Linux. **You do nothing extra to get multi-OS.**
+   - **Default — `[windows, linux]`.** Most MCP servers are I/O- and HTTP-bound and have no native-Windows dependency. The shipped template is wired this way out of the box: both manifests' `command` is extensionless (`bin/{{short_name}}` — `${CLAUDE_PLUGIN_ROOT}/...` for Claude, `${PLUGIN_ROOT}/...` for Codex), `release.yml` runs a stamp → matrix-build → assembly pipeline, `test.yml` matrices over `windows-latest` + `ubuntu-22.04`, `build.ps1` runs under both Windows PowerShell 5.1 and `pwsh` on Linux. **You do nothing extra to get multi-OS.**
+
+     > **Known Codex-on-Windows limitation.** A multi-OS zip ships both `bin/{{short_name}}` and `bin/{{short_name}}.exe` side by side. Codex on Windows currently fails to resolve the extensionless command to the `.exe` (no PATHEXT resolution), so the MCP won't start there until OpenAI fixes it — `openai/codex#16229`. Claude (both OSes) and Codex-on-Linux are unaffected; a Windows-only plugin sidesteps it because its `command` carries an explicit `.exe`. Flag this to the user if their plugin targets Codex on Windows.
 
    - **Windows-only override — `[windows]`.** Pick this only if the plugin genuinely depends on Win32 APIs (COM, `pyvda`, `pywin32`, `comtypes`) — reference plugin: `agent-vdesktop`. If the user picks `[windows]`, after the standard template copy walk you must additionally:
      1. Edit `.github/workflows/release.yml`: remove the `ubuntu-22.04` row from the `build` job's `matrix.include`; in the assembly job drop the `bin/{{short_name}}` (Linux binary) existence-check and `chmod +x`; in the orphan-branch push step drop `bin/{{short_name}}` from the `git add` / `git update-index --chmod=+x` calls.
      2. Edit `.github/workflows/test.yml`: drop `ubuntu-22.04` from `matrix.os`.
-     3. Edit `.claude-plugin/plugin.json`: change `command` to `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`.
+     3. Append `.exe` to the `command` in **both** manifests: `.claude-plugin/plugin.json` → `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`, and `.codex-plugin/plugin.json` → `${PLUGIN_ROOT}/bin/{{short_name}}.exe`.
 
      Apply these edits with `Edit` after the bulk copy finishes — they're surgical and the template's comments call out each spot.
 
@@ -85,11 +87,13 @@ Apply these substitutions to **file contents** and to **path segments** (directo
 | `{{short_name}}` | `newthing` |
 | `{{package_name}}` | `newthing_plugin` |
 | `{{skill_slug}}` | `newthing` |
+| `{{display_name}}` | `Agent Newthing` |
 | `{{description}}` | (from Phase 1) |
 | `{{author_name}}` | from `git config user.name`, fall back to asking |
-| `{{SHORT_NAME_UPPER}}` | `NEWTHING` |
 
 Read `git config user.name` once at the start of Phase 3 with `Bash` and use the result as `{{author_name}}`. If empty, ask the user.
+
+Derive `{{display_name}}` (used by **both** plugin types, in the Codex manifest's `interface.displayName`) by title-casing the plugin name — `agent-newthing` → `Agent Newthing` — and **confirm it with the user**, since casing isn't always mechanical (`agent-vdesktop` → `Agent vDesktop`).
 
 `OS_TARGETS` is **state, not a placeholder** — it doesn't appear in any template file. It drives a post-copy override step (Phase 3.5 below) for the Windows-only case. The default `[windows, linux]` requires no edits at all.
 
@@ -111,7 +115,7 @@ If the user chose `OS_TARGETS = [windows]`, apply the surgical edits enumerated 
 
 1. `.github/workflows/release.yml` — remove the `ubuntu-22.04` matrix row from the `build` job, drop the Linux-binary assertion + `chmod +x` from the assembly job's "Build merged staging tree" step, and drop the Linux-binary `git add` / `git update-index --chmod=+x` calls from the orphan-branch push step.
 2. `.github/workflows/test.yml` — drop `ubuntu-22.04` from `matrix.os`.
-3. `.claude-plugin/plugin.json` — change `command` from `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}` to `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`.
+3. Both manifests — append `.exe` to `command`: `.claude-plugin/plugin.json` → `${CLAUDE_PLUGIN_ROOT}/bin/{{short_name}}.exe`, and `.codex-plugin/plugin.json` → `${PLUGIN_ROOT}/bin/{{short_name}}.exe`.
 
 Use the `Edit` tool for each substitution (the spots are clearly delimited by comments in the template). Don't delete the Linux-only steps in `build.ps1` — the script branches on `$IsWindows` at runtime, so a Windows-only matrix simply never exercises the Linux side.
 
@@ -202,8 +206,19 @@ Then ask if there's anything they want to customize before the first commit (e.g
 Templates live under `.claude/skills/operations/templates/`:
 
 - `python-mcp/` — full Python-MCP plugin tree (multi-OS by default — Windows + Linux). Reference implementations: `plugins/agent-project-issues/` and `plugins/agent-worktree/` (multi-OS); `plugins/agent-vdesktop/` (post-scaffold Windows-only override).
-- `skill-plugin/` — pure-Skill plugin tree (7 files). Reference implementation: `plugins/agent-vdesktop-skill/`.
+- `skill-plugin/` — pure-Skill plugin tree (8 files). Reference implementation: `plugins/agent-vdesktop-skill/`.
 
 Templates use the placeholder set listed in Phase 3. Filenames and directory names that include placeholders must be renamed during the copy walk.
+
+### Dual host manifests (Claude + Codex)
+
+Both plugin types scaffold **two** host manifests so a single release installs on both Claude Code and Codex:
+
+- `.claude-plugin/plugin.json` — Claude; the `command` expands via `${CLAUDE_PLUGIN_ROOT}`.
+- `.codex-plugin/plugin.json` — Codex; same surface but the `command` expands via `${PLUGIN_ROOT}`, plus a `repository` field and an `interface { displayName, shortDescription }` block.
+
+For `python-mcp` both carry an **inline** `mcpServers` block — there is no external `.mcp.json`, because `${CLAUDE_PLUGIN_ROOT}` doesn't expand in Codex MCP commands and a bare relative path fails in Claude, so no placeholder is shared across the two hosts. The default scaffold ships **no `env` block** (add one with `{{SHORT_NAME_UPPER}}_PLUGIN_ROOT` only if the binary actually reads it). For `skill-plugin`, the Codex manifest carries an explicit `skills: "./skills"` pointer (Claude auto-discovers `skills/`).
+
+`release.yml` stamps the version into **both** manifests and stages the `.codex-plugin/` directory into the release zip alongside `.claude-plugin/`. The matrix `python-mcp` pipeline also sets `include-hidden-files: true` on the stamped-source artifact so those dot-directories survive the build round-trip. There is no `.mcp.json` staging, by design.
 
 When templates drift from the reference implementations (e.g., `agent-vdesktop`'s `release.yml` gets a new step), that's a maintenance task — update the template, not the existing plugins. The templates are the source of truth for **new** plugins; the existing plugins are independent repos that evolve on their own cadence.

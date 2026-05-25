@@ -72,19 +72,22 @@ jobs:
             exit 1
           fi
 
-      - name: Stamp version into pyproject.toml + plugin.json
+      - name: Stamp version into pyproject.toml + plugin manifests
         shell: bash
         run: |
           V="${{ inputs.version }}"
           # pyproject.toml — first `version = "..."` line wins.
           sed -i -E "0,/^version[[:space:]]*=[[:space:]]*\"[^\"]*\"/s//version = \"$V\"/" pyproject.toml
-          # .claude-plugin/plugin.json
-          tmp=$(mktemp)
-          jq --arg v "$V" '.version = $v' .claude-plugin/plugin.json > "$tmp"
-          mv "$tmp" .claude-plugin/plugin.json
+          # Both plugin manifests (Claude + Codex) get the same version.
+          for manifest in .claude-plugin/plugin.json .codex-plugin/plugin.json; do
+            tmp=$(mktemp)
+            jq --arg v "$V" '.version = $v' "$manifest" > "$tmp"
+            mv "$tmp" "$manifest"
+          done
           echo "Stamped version $V"
           grep '^version' pyproject.toml
           grep '"version"' .claude-plugin/plugin.json
+          grep '"version"' .codex-plugin/plugin.json
 
       - name: Export plugin metadata
         id: meta
@@ -99,6 +102,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stamped-source
+          # v4 excludes dotfiles/dotdirs by default; downstream jobs need
+          # .claude-plugin/ + .codex-plugin/ (and .github/, .gitattributes etc.)
+          # in the downloaded tree to build and assemble the release.
+          include-hidden-files: true
           path: |
             .
             !.git
@@ -180,6 +187,7 @@ jobs:
 
           # Copy the install-ready, non-binary parts from the stamped tree.
           cp -a stamped/.claude-plugin "$STAGE/"
+          [ -d stamped/.codex-plugin ] && cp -a stamped/.codex-plugin "$STAGE/" || true
           [ -f stamped/README.md ] && cp -a stamped/README.md "$STAGE/" || true
           [ -f stamped/LICENSE   ] && cp -a stamped/LICENSE   "$STAGE/" || true
           if [ -d stamped/skills ]; then

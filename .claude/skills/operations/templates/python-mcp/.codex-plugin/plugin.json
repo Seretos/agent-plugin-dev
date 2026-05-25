@@ -1,0 +1,17 @@
+{
+  "name": "{{plugin_name}}",
+  "version": "0.0.0",
+  "description": "{{description}}",
+  "author": { "name": "{{author_name}}" },
+  "repository": "https://github.com/Seretos/{{plugin_name}}",
+  "mcpServers": {
+    "{{short_name}}": {
+      "command": "${PLUGIN_ROOT}/bin/{{short_name}}",
+      "args": []
+    }
+  },
+  "interface": {
+    "displayName": "{{display_name}}",
+    "shortDescription": "{{description}}"
+  }
+}

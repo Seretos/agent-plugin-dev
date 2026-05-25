@@ -51,12 +51,16 @@ jobs:
             exit 1
           fi
 
-      - name: Stamp version into plugin.json (in CI only)
+      - name: Stamp version into plugin manifests (in CI only)
         shell: bash
         run: |
           V="${{ inputs.version }}"
-          jq --arg v "$V" '.version = $v' .claude-plugin/plugin.json > /tmp/plugin.json
-          mv /tmp/plugin.json .claude-plugin/plugin.json
+          # Both plugin manifests (Claude + Codex) get the same version.
+          for manifest in .claude-plugin/plugin.json .codex-plugin/plugin.json; do
+            tmp=$(mktemp)
+            jq --arg v "$V" '.version = $v' "$manifest" > "$tmp"
+            mv "$tmp" "$manifest"
+          done
           echo "Stamped version $V"
 
       - name: Stage install tree and build release zip
@@ -65,8 +69,9 @@ jobs:
         run: |
           STAGE="build/stage/{{plugin_name}}"
           rm -rf "$STAGE"
-          mkdir -p "$STAGE/.claude-plugin" "$STAGE/skills"
+          mkdir -p "$STAGE/.claude-plugin" "$STAGE/.codex-plugin" "$STAGE/skills"
           cp .claude-plugin/plugin.json "$STAGE/.claude-plugin/"
+          cp .codex-plugin/plugin.json  "$STAGE/.codex-plugin/"
           cp -a skills/. "$STAGE/skills/"
           cp README.md "$STAGE/"
           cp LICENSE "$STAGE/" 2>/dev/null || true
