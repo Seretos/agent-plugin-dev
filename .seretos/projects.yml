@@ -11,6 +11,34 @@ projects:
         create: true
         modify: true
 
+  - id: agent-python-developer-ticket-workflow
+    description: ""
+    provider: github
+    path: Seretos/agent-python-developer-ticket-workflow
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: false
+
+  - id: agent-mcp-tester
+    description: E2E-tests MCP servers with LLM sweeps + a deterministic replay runner
+    provider: github
+    path: Seretos/agent-mcp-tester
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
   - id: agent-plugin-dev
     description: ""
     provider: github

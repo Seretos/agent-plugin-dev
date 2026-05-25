@@ -54,12 +54,19 @@
       "path": "plugins/agent-python-developer-ticket-workflow",
       "remote": "git@github.com:Seretos/agent-python-developer-ticket-workflow.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-mcp-tester",
+      "path": "plugins/agent-mcp-tester",
+      "remote": "git@github.com:Seretos/agent-mcp-tester.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
     { "from": "mcp-test/plugins/agent-vdesktop",       "to": "plugins/agent-vdesktop" },
     { "from": "mcp-test/plugins/agent-vdesktop-skill", "to": "plugins/agent-vdesktop-skill" },
     { "from": "mcp-test/plugins/agent-project-issues", "to": "plugins/agent-project-issues" },
-    { "from": "mcp-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" }
+    { "from": "mcp-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" },
+    { "from": "mcp-test/plugins/agent-mcp-tester",     "to": "plugins/agent-mcp-tester" }
   ]
 }
