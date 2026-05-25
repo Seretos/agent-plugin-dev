@@ -206,7 +206,9 @@ Then ask if there's anything they want to customize before the first commit (e.g
 Templates live under `.claude/skills/operations/templates/`:
 
 - `python-mcp/` — full Python-MCP plugin tree (multi-OS by default — Windows + Linux). Reference implementations: `plugins/agent-project-issues/` and `plugins/agent-worktree/` (multi-OS); `plugins/agent-vdesktop/` (post-scaffold Windows-only override).
-- `skill-plugin/` — pure-Skill plugin tree (8 files). Reference implementation: `plugins/agent-vdesktop-skill/`.
+- `skill-plugin/` — pure-Skill plugin tree. Reference implementation: `plugins/agent-vdesktop-skill/`.
+
+Both trees ship a paired `AGENTS.md` + `CLAUDE.md`: `AGENTS.md` is the human/agent doc (the top HTML comment states the authoring rule — *only document what an agent can't derive from the code* — and should be deleted in real plugins), and `CLAUDE.md` is a one-line `@AGENTS.md` import so Claude Code, which loads `CLAUDE.md` rather than `AGENTS.md`, picks it up. Keep the `AGENTS.md` lean when you fill it in.
 
 Templates use the placeholder set listed in Phase 3. Filenames and directory names that include placeholders must be renamed during the copy walk.
 

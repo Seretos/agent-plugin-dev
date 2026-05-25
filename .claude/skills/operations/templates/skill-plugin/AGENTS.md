@@ -1,54 +1,18 @@
+<!-- AGENTS.md authoring rule (keep this comment in the template; delete it in a real plugin):
+     Document ONLY what an agent cannot derive by reading the code and the file tree.
+     - DO capture: cross-file / cross-repo contracts, non-obvious conventions, gotchas and
+       their "why", external requirements (secrets, services), and deliberate design choices.
+     - DON'T restate: the directory layout, what a workflow YAML does step-by-step, or how a
+       build script works line-by-line — an agent reads those directly. If a sentence only
+       narrates a file the reader already has in front of them, cut it.
+     A lean AGENTS.md the agent trusts beats an exhaustive one it has to re-verify. -->
+
 # {{plugin_name}}
 
-Pure skill plugin — no binary, no MCP server. Ships a single `SKILL.md` that Claude Code loads when the skill's `description` matches the user's intent.
+Pure skill plugin — no binary, no MCP server. Ships `skills/{{skill_slug}}/SKILL.md`, which Claude Code loads when the skill's `description` matches the user's intent.
 
-## Layout
+## Contracts an agent won't infer from the tree
 
-```
-skills/{{skill_slug}}/
-  SKILL.md                    # the skill — frontmatter (name, description) + body
-
-.claude-plugin/plugin.json    # plugin manifest, declares dependencies (e.g. on an MCP)
-
-.github/workflows/
-  lint.yml                    # plugin.json + SKILL.md frontmatter validation on every push
-  release.yml                 # manual-dispatch release flow
-```
-
-## Branches
-
-- `main` — source of truth.
-- `release` — orphan branch, force-pushed by `release.yml`. Contains only install-ready files: `.claude-plugin/plugin.json`, `skills/`, `README.md`.
-
-## Release flow
-
-Triggered manually:
-
-```
-Actions → release → Run workflow → version=X.Y.Z
-```
-
-The workflow:
-1. Validates `X.Y.Z` is semver.
-2. Fails if tag `{{plugin_name}}--vX.Y.Z` already exists.
-3. Stamps the version into `.claude-plugin/plugin.json` (CI checkout only).
-4. Stages install-ready tree, zips it.
-5. Force-pushes the orphan `release` branch.
-6. Creates the `{{plugin_name}}--vX.Y.Z` tag and a GitHub Release with the zip attached.
-7. POSTs to `Seretos/agent-marketplace/dispatches` (category: `skill`) using `MARKETPLACE_DISPATCH_TOKEN`.
-
-## Required secret
-
-- `MARKETPLACE_DISPATCH_TOKEN` — fine-grained PAT with `Contents: Read and write` + `Pull requests: Read and write` on `Seretos/agent-marketplace` only.
-
-## Dependencies
-
-If this skill teaches Claude how to drive an MCP plugin, declare it under `dependencies` in `.claude-plugin/plugin.json`:
-
-```json
-"dependencies": [
-  { "name": "agent-<mcp-plugin>", "version": ">=0.0.1 <1.0.0" }
-]
-```
-
-Claude Code will install/load the MCP automatically when this skill is installed.
+- **Release is orphan-branch + marketplace dispatch.** `release.yml` (manual: Actions → release → `version=X.Y.Z`) stamps the version, then force-pushes an orphan `release` branch holding only install-ready files and POSTs a dispatch (`category: skill`) to `Seretos/agent-marketplace`. `main` and `release` share no history. Clients install at the tag `{{plugin_name}}--vX.Y.Z`.
+- **Required secret:** `MARKETPLACE_DISPATCH_TOKEN` — fine-grained PAT, `Contents: RW` + `Pull requests: RW` on `Seretos/agent-marketplace` only.
+- **Depending on an MCP plugin:** declare it under `dependencies` in `.claude-plugin/plugin.json` (`{ "name": "agent-<mcp>", "version": ">=0.0.1 <1.0.0" }`); Claude Code installs/loads it automatically with this skill.
