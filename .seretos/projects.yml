@@ -53,6 +53,20 @@ projects:
         modify: true
         merge: true
 
+  - id: agent-ecosystem-ticket-router
+    description: ""
+    provider: github
+    path: Seretos/agent-ecosystem-ticket-router
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
   - id: agent-vdesktop
     description: Microsoft Virtual Desktop management MCP plugin for Claude Code
     provider: github
@@ -113,6 +127,20 @@ projects:
     description: ""
     provider: github
     path: Seretos/lib-python-projects
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
+  - id: lib-python-worktree
+    description: ""
+    provider: github
+    path: Seretos/lib-python-worktree
     token_env: GITHUB_TOKEN
     permissions:
       issues:
