@@ -66,6 +66,12 @@
       "path": "plugins/agent-mcp-tester",
       "remote": "git@github.com:Seretos/agent-mcp-tester.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-ecosystem-ticket-router",
+      "path": "plugins/agent-ecosystem-ticket-router",
+      "remote": "git@github.com:Seretos/agent-ecosystem-ticket-router.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
