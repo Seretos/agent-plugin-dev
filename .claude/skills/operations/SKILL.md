@@ -191,6 +191,7 @@ Give the user a tight handoff message covering:
    "enabledPlugins": { "agent-{name}@dev-marketplace": true }
    ```
 4. To cut a first release: Actions tab → `release` workflow → "Run workflow" → version `0.0.1`. The workflow will dispatch to `agent-marketplace` and open a PR there.
+5. **Replace `assets/icon.png` before cutting v0.0.1** — the templates ship a generic default PNG; if you release without replacing it, the marketplace will show the default image permanently (or until you cut another tag).
 
 Then ask if there's anything they want to customize before the first commit (e.g., README content, server.py initial tools, SKILL.md body). For `python-mcp` plugins, point at `SECURITY.md` specifically — the template ships a generic threat-model stub, and the inline HTML comment lists plugin-specific sections worth adding (intentional shell execution, token handling, permission gating, AI-attribution markers) based on the tool surface. If yes to any customization, edit those files in place — they're already in the freshly-committed worktree, so suggest an `--amend` only if the user explicitly asks, otherwise let them stack normal commits.
 
@@ -222,5 +223,14 @@ Both plugin types scaffold **two** host manifests so a single release installs o
 For `python-mcp` both carry an **inline** `mcpServers` block — there is no external `.mcp.json`, because `${CLAUDE_PLUGIN_ROOT}` doesn't expand in Codex MCP commands and a bare relative path fails in Claude, so no placeholder is shared across the two hosts. The default scaffold ships **no `env` block** (add one with `{{SHORT_NAME_UPPER}}_PLUGIN_ROOT` only if the binary actually reads it). For `skill-plugin`, the Codex manifest carries an explicit `skills: "./skills"` pointer (Claude auto-discovers `skills/`).
 
 `release.yml` stamps the version into **both** manifests and stages the `.codex-plugin/` directory into the release zip alongside `.claude-plugin/`. The matrix `python-mcp` pipeline also sets `include-hidden-files: true` on the stamped-source artifact so those dot-directories survive the build round-trip. There is no `.mcp.json` staging, by design.
+
+### Marketplace icon
+
+Both templates ship `assets/icon.png` (a default placeholder PNG; the user replaces it with the plugin's real artwork before cutting v0.0.1). The release pipeline treats it as an install artifact, not just a repo file:
+
+- `release.yml` copies `assets/` into the staging tree, so it lands inside the release zip **and** on the orphan `release` branch at the tagged commit.
+- The dispatch payload to `agent-marketplace` carries an `"icon": "https://raw.githubusercontent.com/${repo}/${TAG}/assets/icon.png"` field; the marketplace renders that URL on the plugin's tile.
+
+This means a plugin without an `assets/icon.png` shipped to the orphan `release` branch will resolve to a broken image on the marketplace. The default PNG that ships in the templates is good enough to prevent that until the user provides their own.
 
 When templates drift from the reference implementations (e.g., `agent-vdesktop`'s `release.yml` gets a new step), that's a maintenance task — update the template, not the existing plugins. The templates are the source of truth for **new** plugins; the existing plugins are independent repos that evolve on their own cadence.

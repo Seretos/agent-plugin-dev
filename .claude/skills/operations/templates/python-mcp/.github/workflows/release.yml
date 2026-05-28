@@ -193,6 +193,10 @@ jobs:
           if [ -d stamped/skills ]; then
             cp -a stamped/skills "$STAGE/"
           fi
+          # assets/ goes onto the orphan release branch alongside the binaries,
+          # so the dispatch payload's icon URL
+          # (raw.githubusercontent.com/${repo}/${TAG}/assets/icon.png) resolves.
+          [ -d stamped/assets ] && cp -a stamped/assets "$STAGE/" || true
 
           # Merge every per-OS bin payload. Each build job uploads to
           # bins/bin-<os>/ which contains the OS-specific binary
@@ -331,7 +335,8 @@ jobs:
               "repo":        "${{ github.repository }}",
               "category":    "mcp",
               "version":     "${VERSION}",
-              "ref":         "${TAG}"
+              "ref":         "${TAG}",
+              "icon":        "https://raw.githubusercontent.com/${{ github.repository }}/${TAG}/assets/icon.png"
             }
           }
           EOF

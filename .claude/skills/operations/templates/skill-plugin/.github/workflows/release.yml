@@ -75,6 +75,10 @@ jobs:
           cp -a skills/. "$STAGE/skills/"
           cp README.md "$STAGE/"
           cp LICENSE "$STAGE/" 2>/dev/null || true
+          # assets/ goes onto the orphan release branch so the dispatch
+          # payload's icon URL (raw.githubusercontent.com/${repo}/${TAG}/
+          # assets/icon.png) resolves.
+          [ -d assets ] && cp -a assets "$STAGE/" || true
 
           mkdir -p dist
           ZIPNAME="{{plugin_name}}-${{ inputs.version }}.zip"
@@ -171,7 +175,8 @@ jobs:
               "repo":        "${{ github.repository }}",
               "category":    "skill",
               "version":     "${VERSION}",
-              "ref":         "${TAG}"
+              "ref":         "${TAG}",
+              "icon":        "https://raw.githubusercontent.com/${{ github.repository }}/${TAG}/assets/icon.png"
             }
           }
           EOF

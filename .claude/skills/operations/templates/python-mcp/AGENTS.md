@@ -17,6 +17,7 @@ PyInstaller-frozen Python MCP server, shipped as a self-contained binary (`bin/{
 - **Version is pipeline-owned.** The `version` in `pyproject.toml` and both manifests is a placeholder; the workflow input is the source of truth and the stamp never lands on `main`. Don't hand-bump it.
 - **Two host manifests, no `.mcp.json`.** `.claude-plugin/plugin.json` resolves its `command` via `${CLAUDE_PLUGIN_ROOT}`; `.codex-plugin/plugin.json` via `${PLUGIN_ROOT}`. Both carry an inline `mcpServers` block because neither placeholder expands in the other host. Keep the two in sync.
 - **Required secret:** `MARKETPLACE_DISPATCH_TOKEN` — fine-grained PAT, `Contents: RW` + `Pull requests: RW` on `Seretos/agent-marketplace` only.
+- **`assets/icon.png` is a release artifact, not just a repo file.** The dispatch payload sends a `raw.githubusercontent.com/${repo}/${TAG}/assets/icon.png` URL to the marketplace, so the file must live on the orphan `release` branch at the tagged commit — `release.yml` copies `stamped/assets/` into the staging tree for exactly that reason. Ship `assets/icon.png` from day one or the marketplace listing has no image.
 
 ## OS targets
 
