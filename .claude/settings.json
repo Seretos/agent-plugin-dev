@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "agent-ecosystem-ticket-router@agent-marketplace": true,
+    "agent-project-issues@dev-marketplace": true
+  }
+}

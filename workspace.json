@@ -72,6 +72,12 @@
       "path": "plugins/agent-ecosystem-ticket-router",
       "remote": "git@github.com:Seretos/agent-ecosystem-ticket-router.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-serena-wrapper",
+      "path": "plugins/agent-serena-wrapper",
+      "remote": "git@github.com:Seretos/agent-serena-wrapper.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
@@ -79,6 +85,7 @@
     { "from": "mcp-test/plugins/agent-vdesktop-skill", "to": "plugins/agent-vdesktop-skill" },
     { "from": "mcp-test/plugins/agent-project-issues", "to": "plugins/agent-project-issues" },
     { "from": "mcp-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" },
-    { "from": "mcp-test/plugins/agent-mcp-tester",     "to": "plugins/agent-mcp-tester" }
+    { "from": "mcp-test/plugins/agent-mcp-tester",     "to": "plugins/agent-mcp-tester" },
+    { "from": "mcp-test/plugins/agent-serena-wrapper", "to": "plugins/agent-serena-wrapper" }
   ]
 }
