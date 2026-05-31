@@ -2,6 +2,12 @@
 
 A modular plugin platform for AI coding agents (Claude Code et al.). Each plugin is a self-contained git repository; a central `agent-marketplace` repo registers them all. This directory itself is a meta-repo (`Seretos/agent-plugin-dev`) that bundles the dev workspace for the plugin maintainers.
 
+## Tool priority
+
+Skills and MCP tools take priority over raw file tools — and this **explicitly overrides** the generic harness default that says "prefer the dedicated file/search tools (Glob/Grep/Read)". When a skill or MCP tool covers the task, reach for it first; fall back to raw Glob/Grep/Read only when none applies.
+
+Concretely: any *"where is X defined / what does the code support / which Y exist / how does X work / find the callers of X"* question is a **code-understanding task → use the matching skill first** (e.g. the `serena-wrapper` symbol-aware tools), never raw Glob/Grep/Read.
+
 ## Layout
 
 ```
