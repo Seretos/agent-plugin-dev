@@ -209,8 +209,9 @@ Templates live under `.claude/skills/operations/templates/`:
 
 - `python-mcp/` — full Python-MCP plugin tree (multi-OS by default — Windows + Linux). Reference implementations: `plugins/agent-project-issues/` and `plugins/agent-worktree/` (multi-OS); `plugins/agent-vdesktop/` (post-scaffold Windows-only override).
 - `skill-plugin/` — pure-Skill plugin tree. Reference implementation: `plugins/agent-vdesktop-skill/`.
+- `electron-typescript/` — empty-but-runnable Electron + TypeScript desktop **app** (not a plugin), built with `electron-builder` for Windows + macOS + Linux. Its `release.yml` creates a `{{app_name}}--vX.Y.Z` tag on the release commit, attaches the per-OS installers as Release assets, and dispatches an `app-release` event (carrying a `downloads` platform→URL map) to the marketplace's **app** registry — not the plugin registry. App placeholders are `{{app_name}}` / `{{short_name}}` / `{{display_name}}` / `{{description}}` / `{{author_name}}`. The Phase 1–4 scaffolding flow above is plugin-shaped; an app uses this template but a different (app-specific) onboarding path, so adapt by hand for now.
 
-Both trees ship a paired `AGENTS.md` + `CLAUDE.md`: `AGENTS.md` is the human/agent doc (the top HTML comment states the authoring rule — *only document what an agent can't derive from the code* — and should be deleted in real plugins), and `CLAUDE.md` is a one-line `@AGENTS.md` import so Claude Code, which loads `CLAUDE.md` rather than `AGENTS.md`, picks it up. Keep the `AGENTS.md` lean when you fill it in.
+The plugin trees ship a paired `AGENTS.md` + `CLAUDE.md`: `AGENTS.md` is the human/agent doc (the top HTML comment states the authoring rule — *only document what an agent can't derive from the code* — and should be deleted in real plugins), and `CLAUDE.md` is a one-line `@AGENTS.md` import so Claude Code, which loads `CLAUDE.md` rather than `AGENTS.md`, picks it up. Keep the `AGENTS.md` lean when you fill it in.
 
 Templates use the placeholder set listed in Phase 3. Filenames and directory names that include placeholders must be renamed during the copy walk.
 
