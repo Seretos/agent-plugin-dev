@@ -79,6 +79,9 @@ jobs:
           # payload's icon URL (raw.githubusercontent.com/${repo}/${TAG}/
           # assets/icon.png) resolves.
           [ -d assets ] && cp -a assets "$STAGE/" || true
+          # description.md ships onto the orphan release branch so the dispatch
+          # payload's description_url resolves at the tagged commit.
+          [ -f description.md ] && cp -a description.md "$STAGE/" || true
 
           mkdir -p dist
           ZIPNAME="{{plugin_name}}-${{ inputs.version }}.zip"
@@ -176,7 +179,8 @@ jobs:
               "category":    "skill",
               "version":     "${VERSION}",
               "ref":         "${TAG}",
-              "icon":        "https://raw.githubusercontent.com/${{ github.repository }}/${TAG}/assets/icon.png"
+              "icon":        "https://raw.githubusercontent.com/${{ github.repository }}/${TAG}/assets/icon.png",
+              "description_url": "https://raw.githubusercontent.com/${{ github.repository }}/${TAG}/description.md"
             }
           }
           EOF

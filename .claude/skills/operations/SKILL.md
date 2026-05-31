@@ -192,6 +192,7 @@ Give the user a tight handoff message covering:
    ```
 4. To cut a first release: Actions tab → `release` workflow → "Run workflow" → version `0.0.1`. The workflow will dispatch to `agent-marketplace` and open a PR there.
 5. **Replace `assets/icon.png` before cutting v0.0.1** — the templates ship a generic default PNG; if you release without replacing it, the marketplace will show the default image permanently (or until you cut another tag).
+6. **Fill in `description.md`'s Key Features before cutting v0.0.1** — the template ships a `TODO` stub. The marketplace shows this blurb on the plugin's detail page (sent as `description_url`); an unedited stub ships the placeholder text.
 
 Then ask if there's anything they want to customize before the first commit (e.g., README content, server.py initial tools, SKILL.md body). For `python-mcp` plugins, point at `SECURITY.md` specifically — the template ships a generic threat-model stub, and the inline HTML comment lists plugin-specific sections worth adding (intentional shell execution, token handling, permission gating, AI-attribution markers) based on the tool surface. If yes to any customization, edit those files in place — they're already in the freshly-committed worktree, so suggest an `--amend` only if the user explicitly asks, otherwise let them stack normal commits.
 
@@ -232,5 +233,14 @@ Both templates ship `assets/icon.png` (a default placeholder PNG; the user repla
 - The dispatch payload to `agent-marketplace` carries an `"icon": "https://raw.githubusercontent.com/${repo}/${TAG}/assets/icon.png"` field; the marketplace renders that URL on the plugin's tile.
 
 This means a plugin without an `assets/icon.png` shipped to the orphan `release` branch will resolve to a broken image on the marketplace. The default PNG that ships in the templates is good enough to prevent that until the user provides their own.
+
+### Longer description (`description.md`)
+
+Both templates ship a root `description.md` — a longer-form, user-facing blurb (with a **Key Features** section) that the marketplace renders on the plugin's detail page so a user can decide whether the plugin fits their workflow. Like the icon, it is a release artifact, not just a repo file:
+
+- `release.yml` copies `description.md` into the staging tree, so it lands on the orphan `release` branch at the tagged commit.
+- The dispatch payload carries `"description_url": "https://raw.githubusercontent.com/${repo}/${TAG}/description.md"`; the marketplace dispatcher (`update-registry.yml`) reads `description_url` and stores it on the registry entry. The recovery `dispatch.yml` (python-mcp) sends the same field.
+
+The shipped `description.md` is a `{{plugin_name}}`/`{{description}}`-templated stub with `TODO` Key Features — the user fills it in before cutting v0.0.1.
 
 When templates drift from the reference implementations (e.g., `agent-vdesktop`'s `release.yml` gets a new step), that's a maintenance task — update the template, not the existing plugins. The templates are the source of truth for **new** plugins; the existing plugins are independent repos that evolve on their own cadence.

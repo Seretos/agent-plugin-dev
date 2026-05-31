@@ -197,6 +197,10 @@ jobs:
           # so the dispatch payload's icon URL
           # (raw.githubusercontent.com/${repo}/${TAG}/assets/icon.png) resolves.
           [ -d stamped/assets ] && cp -a stamped/assets "$STAGE/" || true
+          # description.md ships onto the orphan release branch too, so the
+          # dispatch payload's description_url
+          # (raw.githubusercontent.com/${repo}/${TAG}/description.md) resolves.
+          [ -f stamped/description.md ] && cp -a stamped/description.md "$STAGE/" || true
 
           # Merge every per-OS bin payload. Each build job uploads to
           # bins/bin-<os>/ which contains the OS-specific binary
@@ -336,7 +340,8 @@ jobs:
               "category":    "mcp",
               "version":     "${VERSION}",
               "ref":         "${TAG}",
-              "icon":        "https://raw.githubusercontent.com/${{ github.repository }}/${TAG}/assets/icon.png"
+              "icon":        "https://raw.githubusercontent.com/${{ github.repository }}/${TAG}/assets/icon.png",
+              "description_url": "https://raw.githubusercontent.com/${{ github.repository }}/${TAG}/description.md"
             }
           }
           EOF
