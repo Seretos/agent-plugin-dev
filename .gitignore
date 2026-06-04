@@ -2,6 +2,7 @@
 /agent-marketplace/
 /plugins/
 /libs/
+/apps/
 
 # mcp-test is a standalone git repo, embedded in the working tree
 /mcp-test/

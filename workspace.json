@@ -78,6 +78,12 @@
       "path": "plugins/agent-serena-wrapper",
       "remote": "git@github.com:Seretos/agent-serena-wrapper.git",
       "branch": "main"
+    },
+    {
+      "name": "workboard",
+      "path": "apps/workboard",
+      "remote": "git@github.com:Seretos/workboard.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [

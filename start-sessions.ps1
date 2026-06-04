@@ -1,8 +1,9 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Updates the plugin marketplaces, refreshes all installed plugins, then starts
-    a background Claude session for every project under libs/ and plugins/.
+    Starts a background Claude session for every project under libs/, plugins/ and apps/.
+    Optionally updates the plugin marketplaces and refreshes all installed plugins
+    first, but only when -Update (or -Marketplace) is given.
 
 .DESCRIPTION
     Runs in three phases:
@@ -13,29 +14,36 @@
        Claude *desktop* app (under \WindowsApps\) is ignored - only the CLI build
        counts. Override with -Force.
 
-    2. Update - refreshes the marketplace source(s), then updates each installed
+    2. Update (opt-in) - skipped by default. Pass -Update (or -Marketplace) to
+       run it. Refreshes the marketplace source(s), then updates each installed
        plugin in the exact directory and scope where it is installed, driven by
        the install ledger at ~/.claude/plugins/installed_plugins.json. Because the
        'project' and 'local' scopes are per-directory, each update runs with that
        directory as the working directory; only 'user' scope is global. This never
        creates a new install where one does not already exist. Only user-global
-       plugins and install records inside this repo are touched. Skip this phase
-       with -SkipUpdate; narrow it to one marketplace with -Marketplace.
+       plugins and install records inside this repo are touched. Narrow it to one
+       marketplace with -Marketplace.
 
-    3. Launch - discovers each immediate subdirectory of libs/ and plugins/ and
-       launches a Claude session in that directory with:
+    3. Launch - discovers each immediate subdirectory of libs/, plugins/ and
+       apps/ and launches a Claude session in that directory with:
 
            claude --allow-dangerously-skip-permissions --verbose --rc "<project-name>" --bg --permission-mode "bypassPermissions"
 
     Projects are discovered dynamically, so adding or removing a project folder
-    is reflected automatically on the next run.
+    is reflected automatically on the next run. A session for the meta-repo root
+    itself (agent-plugin-dev), one for the MCP test sandbox (mcp-test) and one
+    for the marketplace repo (agent-marketplace) are launched in addition to the
+    discovered projects.
+
+.PARAMETER Update
+    Run the marketplace/plugin update phase before launching sessions. Without
+    this switch (and without -Marketplace) the update phase is skipped and the
+    script only launches sessions.
 
 .PARAMETER Marketplace
     Limit the update phase to plugins from a single marketplace (e.g.
-    'agent-marketplace'). Defaults to '*' (every marketplace).
-
-.PARAMETER SkipUpdate
-    Skip the marketplace/plugin update phase and go straight to launching sessions.
+    'agent-marketplace'). Passing this implies -Update. Defaults to '*' (every
+    marketplace) when -Update is given.
 
 .PARAMETER Force
     Launch even if other Claude Code CLI sessions are already running. Note: the
@@ -45,7 +53,7 @@
 [CmdletBinding()]
 param(
     [string]$Marketplace = '*',
-    [switch]$SkipUpdate,
+    [switch]$Update,
     [switch]$Force
 )
 
@@ -78,9 +86,13 @@ if ($running.Count -gt 0) {
     Write-Warning "$($running.Count) Claude Code session(s) running - continuing anyway because -Force was given. Plugin updates may fail."
 }
 
-# --- Phase 2: update marketplaces and installed plugins -----------------------
+# --- Phase 2: update marketplaces and installed plugins (opt-in) --------------
 
-if (-not $SkipUpdate) {
+# Update is opt-in: it runs only when -Update is given, or when -Marketplace
+# narrows it to a specific marketplace (which implies the intent to update).
+$doUpdate = $Update -or ($Marketplace -ne '*')
+
+if ($doUpdate) {
     # 2a. Refresh the marketplace source(s) so newer plugin versions are visible.
     if ($Marketplace -eq '*') {
         Write-Host 'Refreshing all configured marketplaces...' -ForegroundColor Cyan
@@ -153,14 +165,15 @@ if (-not $SkipUpdate) {
     }
 }
 else {
-    Write-Host 'Skipping marketplace/plugin update (-SkipUpdate).' -ForegroundColor Yellow
+    Write-Host 'Skipping marketplace/plugin update (pass -Update to enable).' -ForegroundColor Yellow
 }
 
 # --- Phase 3: launch a background session per project -------------------------
 
 $parents = @(
     (Join-Path $root 'libs'),
-    (Join-Path $root 'plugins')
+    (Join-Path $root 'plugins'),
+    (Join-Path $root 'apps')
 )
 
 foreach ($parent in $parents) {
@@ -200,3 +213,41 @@ $rootArguments = @(
 )
 
 Start-Process -FilePath 'claude' -ArgumentList $rootArguments -WorkingDirectory $root
+
+# A session for the MCP test sandbox (mcp-test).
+$mcpTestPath = Join-Path $root 'mcp-test'
+if (Test-Path $mcpTestPath) {
+    $mcpTestProject = 'mcp-test'
+    Write-Host "Starting Claude session for '$mcpTestProject' in $mcpTestPath"
+
+    $mcpTestArguments = @(
+        '--allow-dangerously-skip-permissions',
+        '--verbose',
+        '--rc', $mcpTestProject,
+        '--bg',
+        '--permission-mode', 'bypassPermissions'
+    )
+
+    Start-Process -FilePath 'claude' -ArgumentList $mcpTestArguments -WorkingDirectory $mcpTestPath
+} else {
+    Write-Warning "Skipping missing directory: $mcpTestPath"
+}
+
+# A session for the marketplace repo (agent-marketplace).
+$marketplacePath = Join-Path $root 'agent-marketplace'
+if (Test-Path $marketplacePath) {
+    $marketplaceProject = 'agent-marketplace'
+    Write-Host "Starting Claude session for '$marketplaceProject' in $marketplacePath"
+
+    $marketplaceArguments = @(
+        '--allow-dangerously-skip-permissions',
+        '--verbose',
+        '--rc', $marketplaceProject,
+        '--bg',
+        '--permission-mode', 'bypassPermissions'
+    )
+
+    Start-Process -FilePath 'claude' -ArgumentList $marketplaceArguments -WorkingDirectory $marketplacePath
+} else {
+    Write-Warning "Skipping missing directory: $marketplacePath"
+}
