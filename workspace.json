@@ -80,6 +80,12 @@
       "branch": "main"
     },
     {
+      "name": "agent-unity-wrapper",
+      "path": "plugins/agent-unity-wrapper",
+      "remote": "git@github.com:Seretos/agent-unity-wrapper.git",
+      "branch": "main"
+    },
+    {
       "name": "workboard",
       "path": "apps/workboard",
       "remote": "git@github.com:Seretos/workboard.git",
@@ -92,6 +98,7 @@
     { "from": "mcp-test/plugins/agent-project-issues", "to": "plugins/agent-project-issues" },
     { "from": "mcp-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" },
     { "from": "mcp-test/plugins/agent-mcp-tester",     "to": "plugins/agent-mcp-tester" },
-    { "from": "mcp-test/plugins/agent-serena-wrapper", "to": "plugins/agent-serena-wrapper" }
+    { "from": "mcp-test/plugins/agent-serena-wrapper", "to": "plugins/agent-serena-wrapper" },
+    { "from": "mcp-test/plugins/agent-unity-wrapper",  "to": "plugins/agent-unity-wrapper" }
   ]
 }
