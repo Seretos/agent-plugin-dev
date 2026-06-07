@@ -284,6 +284,11 @@ Templates live under `.claude/skills/operations/templates/`:
 
 All three plugin/lib trees ship a paired `AGENTS.md` + `CLAUDE.md`: `AGENTS.md` is the human/agent doc (the top HTML comment states the authoring rule — *only document what an agent can't derive from the code* — and should be deleted in real projects), and `CLAUDE.md` is a one-line `@AGENTS.md` import so Claude Code, which loads `CLAUDE.md` rather than `AGENTS.md`, picks it up. Keep the `AGENTS.md` lean when you fill it in.
 
+**Every template** (`python-mcp`, `skill-plugin`, `python-lib`, `electron-typescript`) also ships two repo-level configs so the scaffolded repo is workflow-ready the moment it's cloned, no manual setup:
+
+- `.claude/settings.json` — enables the three workflow plugins (`agent-project-issues`, `agent-worktree`, `agent-autonomous-developer` from `@agent-marketplace`) so the ticket/PR/worktree tooling is live inside the new repo. Identical across all templates; no placeholders.
+- `.seretos/projects.yml` — registers the repo *itself* with the `project-issues` MCP (one entry, `merge: false`), so an agent working inside the repo can read/route its own tickets. `id`/`path` are placeholdered (`{{plugin_name}}` / `{{lib_name}}` / `{{app_name}}`). If the repo consumes a sibling lib, add that lib as a second, read-only entry (`create:/modify:/merge: false`) per-instance — that pairing is project-specific and stays out of the template.
+
 Templates use the placeholder set listed in Phase 3. Filenames and directory names that include placeholders must be renamed during the copy walk.
 
 ### Dual host manifests (Claude + Codex)
