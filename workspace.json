@@ -90,6 +90,18 @@
       "path": "apps/workboard",
       "remote": "git@github.com:Seretos/workboard.git",
       "branch": "main"
+    },
+    {
+      "name": "lib-python-comfy",
+      "path": "libs/lib-python-comfy",
+      "remote": "git@github.com:Seretos/lib-python-comfy.git",
+      "branch": "main"
+    },
+    {
+      "name": "agent-comfy",
+      "path": "plugins/agent-comfy",
+      "remote": "git@github.com:Seretos/agent-comfy.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
@@ -99,6 +111,7 @@
     { "from": "mcp-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" },
     { "from": "mcp-test/plugins/agent-mcp-tester",     "to": "plugins/agent-mcp-tester" },
     { "from": "mcp-test/plugins/agent-serena-wrapper", "to": "plugins/agent-serena-wrapper" },
-    { "from": "mcp-test/plugins/agent-unity-wrapper",  "to": "plugins/agent-unity-wrapper" }
+    { "from": "mcp-test/plugins/agent-unity-wrapper",  "to": "plugins/agent-unity-wrapper" },
+    { "from": "mcp-test/plugins/agent-comfy",          "to": "plugins/agent-comfy" }
   ]
 }
