@@ -1,11 +1,14 @@
 ---
 name: operations
-description: Use to onboard a new plugin into the Seretos agent-plugin ecosystem. Scaffolds a Python-MCP or pure-Skill plugin in plugins/<name>/, sets up the GitHub release pipeline (release.yml, dispatch.yml, marketplace integration via MARKETPLACE_DISPATCH_TOKEN), patches workspace.json + mcp-test marketplace.json, and runs init.ps1 to wire up symlinks. User does the GitHub-side actions (repo creation, secret setup, push); the skill does the local scaffolding and meta-repo plumbing. Trigger on requests like "I want to add a new plugin", "scaffold a new MCP", "set up a new skill plugin", "integrate <name> into the ecosystem".
+description: Use to onboard a new plugin or library into the Seretos agent-plugin ecosystem. Scaffolds a Python-MCP plugin or pure-Skill plugin in plugins/<name>/, or a pure Python library (python-lib) in libs/lib-python-<feature>/, sets up the matching GitHub release pipeline (plugins: release.yml + dispatch.yml + marketplace via MARKETPLACE_DISPATCH_TOKEN; libs: tag + release/Nx floating branch, no marketplace), patches workspace.json (+ mcp-test marketplace.json for plugins) and the root .seretos/projects.yml, and runs init.ps1 to wire up symlinks. User does the GitHub-side actions (repo creation, secret setup, push); the skill does the local scaffolding and meta-repo plumbing. Trigger on requests like "I want to add a new plugin", "scaffold a new MCP", "set up a new skill plugin", "add a new python lib", "scaffold a lib-python", "integrate <name> into the ecosystem".
 ---
 
-# operations — Plugin Onboarding
+# operations — Plugin & Lib Onboarding
 
-You guide the user through adding a **new plugin** to the `agent-plugin-dev` meta-repo. The result: a fully scaffolded plugin under `plugins/<name>/` with its own git repo, release pipeline wired to the marketplace, and meta-repo files patched so `mcp-test` picks it up.
+You guide the user through adding a **new plugin or library** to the `agent-plugin-dev` meta-repo. The result: a fully scaffolded project with its own git repo and release pipeline, plus meta-repo files patched so the workspace knows about it.
+
+- **Plugins** (`python-mcp`, `skill-plugin`) land under `plugins/agent-<name>/`, wire a release pipeline to the marketplace, and get an `mcp-test` symlink.
+- **Libs** (`python-lib`) land under `libs/lib-python-<feature>/`, ship as Python *source* (no binary, no marketplace, no `mcp-test` symlink) consumed by other repos via `git+https://.../@vX.Y.Z`. The lib path is a **strict subset** of the plugin path — wherever a phase below says "for `python-lib`", that overrides the plugin default.
 
 ## What you do vs. what the user does
 
@@ -23,15 +26,16 @@ You guide the user through adding a **new plugin** to the `agent-plugin-dev` met
 
 Ask the user (use `AskUserQuestion` when multiple options exist, plain prose when a name is needed):
 
-1. **Plugin type:**
+1. **Project type:**
    - `python-mcp` — Python source compiled to a single self-contained binary via PyInstaller (default: Windows `.exe` + Linux ELF; see question 6 below for the Windows-only override), exposes one or more MCP servers. (Reference: `agent-project-issues`, `agent-worktree` for multi-OS; `agent-vdesktop` for Windows-only.)
    - `skill-plugin` — pure documentation skill, no binary, no MCP. (Reference: `agent-vdesktop-skill`.)
-   - If the user wants both, run the skill twice with two separate plugin names — they should ship as independent repos.
+   - `python-lib` — pure Python utility library: src-layout, no binary, no MCP, no marketplace. Shipped as source and consumed by other repos via a `git+https` pin. (Reference: `libs/lib-python-config` — the cleanest, smallest blueprint.)
+   - If the user wants both a lib and a wrapper plugin (the common `lib-python-X` + `agent-X` pair), run the skill twice with two separate names — they ship as independent repos.
 
-2. **Plugin name** — must match `agent-{feature}` (lower-kebab, no `-mcp` suffix, see root `AGENTS.md` "Naming convention"). Reject names that:
-   - don't start with `agent-`
-   - contain uppercase or underscores
-   - already exist in `workspace.json` repos[]
+2. **Project name:**
+   - **plugins** — must match `agent-{feature}` (lower-kebab, no `-mcp` suffix, see root `AGENTS.md` "Naming convention").
+   - **libs** — must match `lib-python-{feature}` (lower-kebab, the `lib-python-` prefix is mandatory; see root `AGENTS.md` and all four existing libs). **No `agent-` prefix.**
+   - In both cases reject names that contain uppercase or underscores, or already exist in `workspace.json` repos[].
 
 3. **Description** — one-sentence, end-user-facing. Show the user what's used in the comparable existing plugins (read one as example) and offer a draft they can edit. If the conversation has enough context to write a strong draft, just propose it and ask for confirmation.
 
@@ -42,7 +46,13 @@ Ask the user (use `AskUserQuestion` when multiple options exist, plain prose whe
 
 5. **Skill slug** (only for `skill-plugin`) — typically the same as `short_name` derived above. Used as the directory name under `skills/`.
 
+   **Lib identifiers** (only for `python-lib`). Derive automatically and confirm:
+   - `lib_name` — the full project name, e.g. `lib-python-comfy`. Used in `pyproject.toml` `name`, the `.seretos`/`.serena` configs, README, and the git remote.
+   - `package_name` — `lib_name` with hyphens turned into underscores, e.g. `lib_python_comfy`. Used as the Python package directory under `src/`.
+
 6. **OS targets** (only for `python-mcp`). Ask: *"Should this plugin ship Linux + Windows binaries, or Windows-only?"*
+
+   > **For `python-lib`: skip this question entirely.** Libs are source-only and OS-agnostic; there is no binary to target. `test.yml` already matrices `windows-latest` + `ubuntu-22.04`, which is the full coverage a lib needs.
 
    - **Default — `[windows, linux]`.** Most MCP servers are I/O- and HTTP-bound and have no native-Windows dependency. The shipped template is wired this way out of the box: both manifests' `command` is extensionless (`bin/{{short_name}}` — `${CLAUDE_PLUGIN_ROOT}/...` for Claude, `${PLUGIN_ROOT}/...` for Codex), `release.yml` runs a stamp → matrix-build → assembly pipeline, `test.yml` matrices over `windows-latest` + `ubuntu-22.04`, `build.ps1` runs under both Windows PowerShell 5.1 and `pwsh` on Linux. **You do nothing extra to get multi-OS.**
 
@@ -59,9 +69,11 @@ Ask the user (use `AskUserQuestion` when multiple options exist, plain prose whe
 
 ## Phase 2 — User does GitHub prep (wait for confirmation)
 
+> **For `python-lib`: only step 1 applies, and the repo is `Seretos/lib-python-{feature}`.** A lib never dispatches into the marketplace, so there is **no PAT and no `MARKETPLACE_DISPATCH_TOKEN` secret** — its `release.yml` uses only the built-in `secrets.GITHUB_TOKEN`. Skip steps 2 and 3 entirely. Tell the user: "Create the empty repo, then tell me when it's done."
+
 Tell the user, **in this order**, to do these three things off-Claude. Then ask explicitly: "Tell me when those three are done."
 
-1. Create an empty GitHub repository at `Seretos/agent-{name}`. No README, no LICENSE, no .gitignore — those come from the scaffold.
+1. Create an empty GitHub repository at `Seretos/agent-{name}` (or `Seretos/lib-python-{feature}` for a lib). No README, no LICENSE, no .gitignore — those come from the scaffold.
 
 2. Create a **fine-grained personal access token** that the new plugin's release workflow will use to dispatch into the marketplace:
    - Resource owner: `Seretos`
@@ -75,11 +87,13 @@ Do **not** proceed to Phase 3 until the user confirms. If they say "done", conti
 
 ## Phase 3 — Local scaffold
 
-You will copy the right template tree from `.claude/skills/operations/templates/{python-mcp,skill-plugin}/` into `plugins/agent-{name}/`, substituting placeholders as you go.
+You will copy the right template tree from `.claude/skills/operations/templates/{python-mcp,skill-plugin,python-lib}/` into the destination, substituting placeholders as you go. Destination is `plugins/agent-{name}/` for plugins, **`libs/lib-python-{feature}/` for libs**.
 
 ### Placeholder substitution
 
 Apply these substitutions to **file contents** and to **path segments** (directories and filenames). Both `{{plugin_name}}` and the rest are literal placeholder strings that appear in the template tree.
+
+Plugins (`python-mcp`, `skill-plugin`):
 
 | Placeholder | Example value |
 |---|---|
@@ -91,7 +105,16 @@ Apply these substitutions to **file contents** and to **path segments** (directo
 | `{{description}}` | (from Phase 1) |
 | `{{author_name}}` | from `git config user.name`, fall back to asking |
 
-Read `git config user.name` once at the start of Phase 3 with `Bash` and use the result as `{{author_name}}`. If empty, ask the user.
+Libs (`python-lib`) — a smaller set; the template uses only these four:
+
+| Placeholder | Example value |
+|---|---|
+| `{{lib_name}}` | `lib-python-comfy` |
+| `{{package_name}}` | `lib_python_comfy` (hyphens → underscores) |
+| `{{description}}` | (from Phase 1) |
+| `{{author_name}}` | from `git config user.name`, fall back to asking |
+
+Read `git config user.name` once at the start of Phase 3 with `Bash` and use the result as `{{author_name}}`. If empty, ask the user. (`python-lib` has no `{{display_name}}`, no `{{short_name}}`, no manifests — skip the display-name confirmation below.)
 
 Derive `{{display_name}}` (used by **both** plugin types, in the Codex manifest's `interface.displayName`) by title-casing the plugin name — `agent-newthing` → `Agent Newthing` — and **confirm it with the user**, since casing isn't always mechanical (`agent-vdesktop` → `Agent vDesktop`).
 
@@ -121,11 +144,11 @@ Use the `Edit` tool for each substitution (the spots are clearly delimited by co
 
 ### Git wiring (local only)
 
-After the files are in place, from `plugins/agent-{name}/`:
+After the files are in place, from the destination dir (`plugins/agent-{name}/`, or `libs/lib-python-{feature}/` for a lib):
 
 ```bash
 git init -b main
-git remote add origin git@github.com:Seretos/agent-{name}.git
+git remote add origin git@github.com:Seretos/agent-{name}.git   # lib: git@github.com:Seretos/lib-python-{feature}.git
 git add .
 git commit -m "init: scaffold from operations skill"
 ```
@@ -134,7 +157,7 @@ git commit -m "init: scaffold from operations skill"
 
 ## Phase 4 — Meta-repo integration
 
-Patch three things in the meta-repo (`agent-plugin-dev` root):
+Patch the meta-repo (`agent-plugin-dev` root). **For `python-lib`, sections 4.1 (repos only, no symlink), 4.3, and 4.4 apply; skip 4.2 entirely.**
 
 ### 4.1 `workspace.json`
 
@@ -149,15 +172,28 @@ Read the file, parse the JSON, append to `repos[]` (preserving the order — app
 }
 ```
 
-And to `mcpTestSymlinks[]`:
+For a **lib**, the entry points at `libs/`:
+
+```json
+{
+  "name": "lib-python-{feature}",
+  "path": "libs/lib-python-{feature}",
+  "remote": "git@github.com:Seretos/lib-python-{feature}.git",
+  "branch": "main"
+}
+```
+
+And — **plugins only** — to `mcpTestSymlinks[]`:
 
 ```json
 { "from": "mcp-test/plugins/agent-{name}", "to": "plugins/agent-{name}" }
 ```
 
+> **Libs get no `mcpTestSymlinks[]` entry.** A lib exposes no MCP, so there's nothing for `mcp-test` to mount — adding one would dangle.
+
 Write the file back with 2-space indentation, matching the existing formatting style. **Use `Edit` rather than `Write`** — preserve the file's existing trailing newline / shape. Find the closing `]` of `repos` and inject the new object just before it.
 
-### 4.2 `mcp-test/.claude-plugin/marketplace.json`
+### 4.2 `mcp-test/.claude-plugin/marketplace.json` (plugins only — skip for libs)
 
 > **Note:** `mcp-test/` is its own standalone git repo (gitignored by the meta-repo). This edit is versioned in the `mcp-test` repo, not in `agent-plugin-dev` — commit it there if you want it tracked.
 
@@ -169,16 +205,40 @@ Append to `plugins[]`:
 
 Same approach: `Edit` to inject before the closing `]`, preserve formatting.
 
-### 4.3 Re-run `scripts/init.ps1`
+### 4.3 Root `.seretos/projects.yml`
+
+So the `project-issues` MCP / ticket-routing knows the new project, append an entry to the root `.seretos/projects.yml` `projects:` list (this file already lists every plugin and lib). Match the existing block shape:
+
+```yaml
+  - id: {name}
+    description: ""
+    provider: github
+    path: Seretos/{name}
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+```
+
+Use the project name verbatim as `id` (`agent-{name}` or `lib-python-{feature}`). `Edit` to append at the end of the list, preserving indentation.
+
+### 4.4 Re-run `scripts/init.ps1`
 
 ```powershell
 ./scripts/init.ps1
 ```
 
 The script is idempotent. It will:
-- Skip cloning the new plugin (already exists locally with `.git`).
-- Try to create the `mcp-test/plugins/agent-{name}` symlink.
+- Skip cloning the new project (already exists locally with `.git`).
+- Try to create the `mcp-test/plugins/agent-{name}` symlink (plugins only).
 - If symlink creation fails (no Developer Mode / no admin), it prints the `New-Item` command for the user to run from an elevated PowerShell. That's the standard fallback — just relay the command to the user.
+
+> **For `python-lib`: nothing extra happens, by design.** The symlink loop iterates only `mcpTestSymlinks[]`, and a lib has no entry there, so init.ps1 just records the repo as "already present" and creates no symlink. No script change is needed for libs.
 
 ## Phase 5 — Handoff
 
@@ -196,12 +256,22 @@ Give the user a tight handoff message covering:
 
 Then ask if there's anything they want to customize before the first commit (e.g., README content, server.py initial tools, SKILL.md body). For `python-mcp` plugins, point at `SECURITY.md` specifically — the template ships a generic threat-model stub, and the inline HTML comment lists plugin-specific sections worth adding (intentional shell execution, token handling, permission gating, AI-attribution markers) based on the tool surface. If yes to any customization, edit those files in place — they're already in the freshly-committed worktree, so suggest an `--amend` only if the user explicitly asks, otherwise let them stack normal commits.
 
+### Handoff for `python-lib`
+
+A lib has no binary, no marketplace, no icon, no `description.md`, no `settings.local.json` activation block. Its handoff is shorter:
+
+1. `cd libs/lib-python-{feature} && git push -u origin main`
+2. Smoke-test locally: `pip install -e ".[test]" && python -m pytest` (the template ships one passing smoke test).
+3. To cut the first release: Actions tab → `release` workflow → "Run workflow" → version `0.1.0` (libs start at `0.1.0`, not `0.0.1`). This validates semver, stamps `pyproject.toml`, tags `v0.1.0`, and force-pushes `release/0.x`. **No marketplace PR** — a lib doesn't dispatch.
+4. Consumers pin the lib in their `pyproject.toml` / `pip install` via `git+https://github.com/Seretos/lib-python-{feature}@v0.1.0` (exact tag) or `@release/0.x` (floating latest 0.x).
+5. Then fill in the real public API in `src/{{package_name}}/__init__.py` (`__all__`), the README usage block, and delete the AGENTS.md authoring-rule comment.
+
 ## Edge cases
 
 - **User reuses an existing name.** Check `workspace.json` `repos[].name`. If it's there, refuse and explain — they need a different name.
 - **Symlinks fail on Windows.** Standard issue. Relay the `New-Item` admin command from `init.ps1`'s output verbatim.
-- **User wants a language other than Python.** Not in scope yet. Tell them: "Today the templates cover Python-MCP and pure-Skill. C# / .NET and other languages will need a hand-adapted scaffold modeled on the python-mcp template — same `release.yml` dispatch payload (`category: "mcp"`), same `MARKETPLACE_DISPATCH_TOKEN`, same `{{plugin_name}}--v{version}` tag format, but a different `build.ps1` and different file layout." Offer to walk through adapting it manually.
-- **User runs the skill against an already-scaffolded plugin.** Detect by checking if `plugins/agent-{name}/.claude-plugin/plugin.json` exists. Don't overwrite — point out the existing file and ask what they want to do.
+- **User wants a language other than Python.** Not in scope yet. Tell them: "Today the templates cover Python-MCP, pure-Skill, and pure Python-lib. C# / .NET and other languages will need a hand-adapted scaffold modeled on the python-mcp template — same `release.yml` dispatch payload (`category: "mcp"`), same `MARKETPLACE_DISPATCH_TOKEN`, same `{{plugin_name}}--v{version}` tag format, but a different `build.ps1` and different file layout." Offer to walk through adapting it manually.
+- **User runs the skill against an already-scaffolded project.** Detect by checking if the destination already has its marker file: `plugins/agent-{name}/.claude-plugin/plugin.json` for a plugin, or `libs/lib-python-{feature}/pyproject.toml` for a lib. Don't overwrite — point out the existing file and ask what they want to do.
 
 ## Templates
 
@@ -209,9 +279,10 @@ Templates live under `.claude/skills/operations/templates/`:
 
 - `python-mcp/` — full Python-MCP plugin tree (multi-OS by default — Windows + Linux). Reference implementations: `plugins/agent-project-issues/` and `plugins/agent-worktree/` (multi-OS); `plugins/agent-vdesktop/` (post-scaffold Windows-only override).
 - `skill-plugin/` — pure-Skill plugin tree. Reference implementation: `plugins/agent-vdesktop-skill/`.
+- `python-lib/` — pure Python source library (no binary, no MCP, no marketplace). Its `release.yml` is the **lib-release flow** (semver-validate → stamp `pyproject.toml` → tag `vX.Y.Z` → force-push `release/Nx` → GitHub Release; no binary, no marketplace dispatch, no `MARKETPLACE_DISPATCH_TOKEN`). Ships no `.claude-plugin`/`.codex-plugin` manifests, no `.spec`, no `build.ps1`, no icon, no `description.md`. Reference implementation: `libs/lib-python-config/`. Placeholders: `{{lib_name}}` / `{{package_name}}` / `{{description}}` / `{{author_name}}`.
 - `electron-typescript/` — empty-but-runnable Electron + TypeScript desktop **app** (not a plugin), built with `electron-builder` for Windows + macOS + Linux. Its `release.yml` creates a `{{app_name}}--vX.Y.Z` tag on the release commit, attaches the per-OS installers as Release assets, and dispatches an `app-release` event (carrying a `downloads` platform→URL map) to the marketplace's **app** registry — not the plugin registry. App placeholders are `{{app_name}}` / `{{short_name}}` / `{{display_name}}` / `{{description}}` / `{{author_name}}`. The Phase 1–4 scaffolding flow above is plugin-shaped; an app uses this template but a different (app-specific) onboarding path, so adapt by hand for now.
 
-The plugin trees ship a paired `AGENTS.md` + `CLAUDE.md`: `AGENTS.md` is the human/agent doc (the top HTML comment states the authoring rule — *only document what an agent can't derive from the code* — and should be deleted in real plugins), and `CLAUDE.md` is a one-line `@AGENTS.md` import so Claude Code, which loads `CLAUDE.md` rather than `AGENTS.md`, picks it up. Keep the `AGENTS.md` lean when you fill it in.
+All three plugin/lib trees ship a paired `AGENTS.md` + `CLAUDE.md`: `AGENTS.md` is the human/agent doc (the top HTML comment states the authoring rule — *only document what an agent can't derive from the code* — and should be deleted in real projects), and `CLAUDE.md` is a one-line `@AGENTS.md` import so Claude Code, which loads `CLAUDE.md` rather than `AGENTS.md`, picks it up. Keep the `AGENTS.md` lean when you fill it in.
 
 Templates use the placeholder set listed in Phase 3. Filenames and directory names that include placeholders must be renamed during the copy walk.
 
