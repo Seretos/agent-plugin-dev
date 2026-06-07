@@ -73,3 +73,28 @@ do those phases by hand on the main thread — let the skill drive them.
   exist and that you are inside them.
 - **AI attribution:** The project-issues MCP automatically prefixes every
   comment and PR body with `#ai-generated`. Never type that prefix yourself.
+
+## Downstream dependency notifications
+
+When a consumer repo starts pinning this lib, wire it up so each release
+opens a "bump me" ticket there automatically:
+
+- **Add the consumer** to the `CONSUMERS` env list in
+  `.github/workflows/release.yml` (one `owner/repo` per line). On the next
+  release the final step opens a
+  `chore(deps): bump {{lib_name}} to vX.Y.Z` issue in every listed repo.
+  The step is idempotent (skips if an open issue with that exact title
+  already exists) and `continue-on-error` (a notification failure never
+  fails the release — it just annotates which consumer/token broke).
+- **Human prerequisite — `CONSUMER_TICKET_TOKEN`:** a repository secret
+  (Settings → Secrets → Actions) holding a fine-grained or classic PAT with
+  **Issues: write** on every consumer repo in `CONSUMERS`. `GITHUB_TOKEN`
+  cannot open cross-repo issues, so without this secret the step is a no-op.
+  Creating/rotating it is a human task, done once before the first release
+  that has consumers.
+- **If the automatic step was skipped or failed** (missing token, or a
+  consumer added after a release), re-file manually: Actions →
+  `open-dep-ticket` (`.github/workflows/ticket.yml`) → "Run workflow",
+  supplying `version` (semver, no leading `v`) and `consumers` (one
+  `owner/repo` per line). It reuses the same idempotency check, so running
+  it twice is safe.
