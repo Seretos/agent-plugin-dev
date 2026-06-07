@@ -123,6 +123,20 @@ projects:
         modify: true
         merge: true
 
+  - id: agent-unity-wrapper
+    description: ""
+    provider: github
+    path: Seretos/agent-unity-wrapper
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
   - id: lib-python-projects
     description: ""
     provider: github
