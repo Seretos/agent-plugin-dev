@@ -11,10 +11,10 @@ projects:
         create: true
         modify: true
 
-  - id: agent-python-developer-ticket-workflow
+  - id: agent-autonomous-developer
     description: ""
     provider: github
-    path: Seretos/agent-python-developer-ticket-workflow
+    path: Seretos/agent-autonomous-developer
     token_env: GITHUB_TOKEN
     permissions:
       issues:
@@ -206,6 +206,62 @@ projects:
         create: true
         modify: true
         merge: false
+
+  - id: lib-python-comfy
+    description: ""
+    provider: github
+    path: Seretos/lib-python-comfy
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
+  - id: agent-comfy
+    description: ""
+    provider: github
+    path: Seretos/agent-comfy
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
+  - id: agent-batch-reviewer
+    description: ""
+    provider: github
+    path: Seretos/agent-batch-reviewer
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
+
+  - id: agent-claude-memory-gatekeeper
+    description: ""
+    provider: github
+    path: Seretos/agent-claude-memory-gatekeeper
+    token_env: GITHUB_TOKEN
+    permissions:
+      issues:
+        create: true
+        modify: true
+      pulls:
+        create: true
+        modify: true
+        merge: true
 
   - id: agent-database-manager
     description: ""

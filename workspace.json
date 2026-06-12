@@ -102,6 +102,18 @@
       "path": "plugins/agent-comfy",
       "remote": "git@github.com:Seretos/agent-comfy.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-batch-reviewer",
+      "path": "plugins/agent-batch-reviewer",
+      "remote": "git@github.com:Seretos/agent-batch-reviewer.git",
+      "branch": "main"
+    },
+    {
+      "name": "agent-claude-memory-gatekeeper",
+      "path": "plugins/agent-claude-memory-gatekeeper",
+      "remote": "git@github.com:Seretos/agent-claude-memory-gatekeeper.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
@@ -112,6 +124,8 @@
     { "from": "mcp-test/plugins/agent-mcp-tester",     "to": "plugins/agent-mcp-tester" },
     { "from": "mcp-test/plugins/agent-serena-wrapper", "to": "plugins/agent-serena-wrapper" },
     { "from": "mcp-test/plugins/agent-unity-wrapper",  "to": "plugins/agent-unity-wrapper" },
-    { "from": "mcp-test/plugins/agent-comfy",          "to": "plugins/agent-comfy" }
+    { "from": "mcp-test/plugins/agent-comfy",          "to": "plugins/agent-comfy" },
+    { "from": "mcp-test/plugins/agent-batch-reviewer", "to": "plugins/agent-batch-reviewer" },
+    { "from": "mcp-test/plugins/agent-claude-memory-gatekeeper", "to": "plugins/agent-claude-memory-gatekeeper" }
   ]
 }
