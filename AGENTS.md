@@ -21,11 +21,15 @@ agent-plugin-dev/             # this directory — meta-repo Seretos/agent-plugi
 │   ├── agent-vdesktop-skill/ # own repo: Seretos/agent-vdesktop-skill
 │   ├── agent-project-issues/ # own repo: Seretos/agent-project-issues
 │   └── agent-worktree/       # own repo: Seretos/agent-worktree
+├── extensions/               # all gitignored here — extensions for OTHER apps
+│   └── obsidian-memory-gatekeeper/  # own repo: Seretos/obsidian-memory-gatekeeper
 ├── mcp-test/                 # local marketplace (directory source) for daily dev
 └── prod-test/                # test setup against the real GitHub marketplace
 ```
 
 The `plugins/` folder is intentionally flat — no rigid mcp/ vs skill/ split. A plugin's `plugin.json` declares whether it carries an MCP server, skills, slash commands, hooks, or any mix.
+
+`extensions/` vs `plugins/`: `plugins/` holds extensions for **coding agents** (Claude Code et al., distributed via the marketplace). `extensions/` holds extensions for **other applications** — e.g. an Obsidian plugin like `obsidian-memory-gatekeeper`. Extensions are independent sub-repos like everything else (registered in `workspace.json`, gitignored here), but they don't take part in the agent-marketplace release flow.
 
 ## Naming convention
 

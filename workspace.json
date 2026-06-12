@@ -114,6 +114,12 @@
       "path": "plugins/agent-claude-memory-gatekeeper",
       "remote": "git@github.com:Seretos/agent-claude-memory-gatekeeper.git",
       "branch": "main"
+    },
+    {
+      "name": "obsidian-memory-gatekeeper",
+      "path": "extensions/obsidian-memory-gatekeeper",
+      "remote": "git@github.com:Seretos/obsidian-memory-gatekeeper.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [

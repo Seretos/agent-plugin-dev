@@ -2,7 +2,8 @@
 <#
 .SYNOPSIS
     Updates the plugin marketplaces and all installed plugins, then starts a
-    background Claude session for every project under libs/, plugins/ and apps/.
+    background Claude session for every project under libs/, plugins/,
+    extensions/ and apps/.
 
 .DESCRIPTION
     Runs in three phases:
@@ -26,8 +27,9 @@
        whole point of the script is that you never forget to update again. Pass
        -NoUpdate to skip it, or -Marketplace to narrow it to a single marketplace.
 
-    3. Launch - discovers each immediate subdirectory of libs/, plugins/ and
-       apps/ and launches a Claude session in that directory with:
+    3. Launch - discovers each immediate subdirectory of libs/, plugins/,
+       extensions/ and apps/ and launches a Claude session in that directory
+       with:
 
            claude --allow-dangerously-skip-permissions --verbose --rc "<project-name>" --bg --permission-mode "bypassPermissions"
 
@@ -173,6 +175,7 @@ else {
 $parents = @(
     (Join-Path $root 'libs'),
     (Join-Path $root 'plugins'),
+    (Join-Path $root 'extensions'),
     (Join-Path $root 'apps')
 )
 

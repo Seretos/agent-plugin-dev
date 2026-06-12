@@ -6,9 +6,9 @@
 
 .DESCRIPTION
     The same set of repositories that start-sessions.ps1 launches sessions for is
-    scanned: every immediate subdirectory of libs/, plugins/ and apps/, plus the
-    meta-repo root, the MCP test sandbox (mcp-test) and the marketplace repo
-    (agent-marketplace). Repositories are discovered dynamically, so adding or
+    scanned: every immediate subdirectory of libs/, plugins/, extensions/ and
+    apps/, plus the meta-repo root, the MCP test sandbox (mcp-test) and the
+    marketplace repo (agent-marketplace). Repositories are discovered dynamically, so adding or
     removing a project folder is reflected automatically.
 
     For each repository the linked worktrees reported by 'git worktree list' are
@@ -56,7 +56,7 @@ $root = $PSScriptRoot
 
 $repos = New-Object System.Collections.Generic.List[string]
 
-foreach ($parent in @((Join-Path $root 'libs'), (Join-Path $root 'plugins'), (Join-Path $root 'apps'))) {
+foreach ($parent in @((Join-Path $root 'libs'), (Join-Path $root 'plugins'), (Join-Path $root 'extensions'), (Join-Path $root 'apps'))) {
     if (Test-Path -LiteralPath $parent) {
         Get-ChildItem -Path $parent -Directory | ForEach-Object { $repos.Add($_.FullName) }
     } else {
