@@ -1,4 +1,9 @@
 {
+  "extraKnownMarketplaces": {
+    "agent-marketplace": {
+      "source": { "source": "github", "repo": "Seretos/agent-marketplace" }
+    }
+  },
   "permissions": {
     "allow": [
       "mcp__plugin_agent-vdesktop_vdesktop__create_desktop",
