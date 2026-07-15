@@ -33,6 +33,16 @@
 
            claude --allow-dangerously-skip-permissions --verbose --rc "<project-name>" --bg --permission-mode "bypassPermissions"
 
+       Launches are SERIALIZED, not fired in parallel. Every Claude process does
+       a read-modify-write of the global ~/.claude.json during startup, and that
+       file has no locking. Starting ~18 sessions within milliseconds (the
+       previous behaviour) let those writes overlap and produced truncated /
+       invalid JSON in ~/.claude.json. To avoid the race, this script launches
+       one session at a time and waits until ~/.claude.json has settled - the
+       just-started process has written and the file is valid JSON again - before
+       launching the next. A backup of ~/.claude.json is taken before the burst
+       and the file is checked for validity up front as a safety net.
+
     Projects are discovered dynamically, so adding or removing a project folder
     is reflected automatically on the next run. A session for the meta-repo root
     itself (agent-plugin-dev), one for the MCP test sandbox (mcp-test) and one
@@ -43,6 +53,11 @@
     Skip the marketplace/plugin update phase and only launch the sessions. The
     running-session guard is also skipped, so launches proceed even while other
     Claude Code sessions are open.
+
+.PARAMETER NoLaunch
+    Skip phase 3 and only run the marketplace/plugin update - no sessions are
+    started. Combine with -Marketplace to update just one marketplace's plugins
+    without starting anything.
 
 .PARAMETER Marketplace
     Limit the update phase to plugins from a single marketplace (e.g.
@@ -57,6 +72,7 @@
 param(
     [string]$Marketplace = '*',
     [switch]$NoUpdate,
+    [switch]$NoLaunch,
     [switch]$Force
 )
 
@@ -171,6 +187,116 @@ else {
 }
 
 # --- Phase 3: launch a background session per project -------------------------
+#
+# Launches are serialized to protect the global ~/.claude.json. Each starting
+# Claude process read-modify-writes that file during startup, and it has no
+# locking - firing every session at once let those writes collide and corrupted
+# the JSON. See Wait-ClaudeConfigSettled / Start-ClaudeSession below.
+
+if ($NoLaunch) {
+    Write-Host 'Skipping session launch (-NoLaunch was given).' -ForegroundColor Yellow
+    return
+}
+
+$configPath = Join-Path $env:USERPROFILE '.claude.json'
+
+# Returns $true only if $Path exists and parses as JSON. Test-Json does not exist
+# on Windows PowerShell 5.1, so validate via ConvertFrom-Json in a try/catch.
+function Test-ValidJson {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $false }
+    try {
+        $raw = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop
+        if ([string]::IsNullOrWhiteSpace($raw)) { return $false }
+        $null = $raw | ConvertFrom-Json -ErrorAction Stop
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Block until the just-launched session has finished mutating ~/.claude.json:
+# wait for a write newer than $Since, then for the file to be valid JSON and
+# quiet (no further write) for $QuietMs. Returns $false on timeout so the caller
+# can warn and continue rather than hang forever.
+function Wait-ClaudeConfigSettled {
+    param(
+        [string]$Path,
+        [datetime]$Since,
+        [int]$TimeoutSec = 25,
+        [int]$QuietMs = 800
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    $sawNewWrite = $false
+    $quietStart = $null
+    $lastSeen = $Since
+    while ((Get-Date) -lt $deadline) {
+        $item = Get-Item -LiteralPath $Path -ErrorAction SilentlyContinue
+        if ($item) {
+            $mtime = $item.LastWriteTimeUtc
+            if ($mtime -gt $lastSeen) {
+                # Fresh write activity from the new process - (re)start the quiet timer.
+                $sawNewWrite = $true
+                $lastSeen = $mtime
+                $quietStart = $null
+            } elseif ($sawNewWrite) {
+                if (Test-ValidJson -Path $Path) {
+                    if ($null -eq $quietStart) { $quietStart = Get-Date }
+                    if (((Get-Date) - $quietStart).TotalMilliseconds -ge $QuietMs) {
+                        return $true
+                    }
+                } else {
+                    # Mid-write / transient invalid - keep waiting for it to close.
+                    $quietStart = $null
+                }
+            }
+        }
+        Start-Sleep -Milliseconds 150
+    }
+    return $false
+}
+
+# Launch a single background session and wait for the config to settle before
+# returning, so the next launch never overlaps this one's startup write.
+function Start-ClaudeSession {
+    param([string]$Project, [string]$Path)
+
+    Write-Host "Starting Claude session for '$Project' in $Path"
+    $arguments = @(
+        '--allow-dangerously-skip-permissions',
+        '--verbose',
+        '--name', $Project,
+        '--rc', $Project,
+        '--bg',
+        '--permission-mode', 'bypassPermissions'
+    )
+
+    $since = if (Test-Path -LiteralPath $configPath) {
+        (Get-Item -LiteralPath $configPath).LastWriteTimeUtc
+    } else {
+        [datetime]::MinValue
+    }
+
+    Start-Process -FilePath 'claude' -ArgumentList $arguments -WorkingDirectory $Path
+
+    if (-not (Wait-ClaudeConfigSettled -Path $configPath -Since $since)) {
+        Write-Warning ("Config did not settle within timeout after '{0}'. Continuing, but ~/.claude.json may be under concurrent write." -f $Project)
+    }
+}
+
+# Safety net: validate ~/.claude.json before the launch burst and back it up, so
+# a slip-through corruption is both detected early and recoverable.
+if (Test-Path -LiteralPath $configPath) {
+    if (Test-ValidJson -Path $configPath) {
+        Copy-Item -LiteralPath $configPath -Destination "$configPath.bak" -Force
+        Write-Host "Backed up ~/.claude.json to $configPath.bak" -ForegroundColor DarkGray
+    } else {
+        Write-Warning "~/.claude.json is ALREADY invalid JSON before launching. Restore it first (a previous backup may exist at $configPath.bak)."
+    }
+}
+
+# Collect every target directory, then launch them one at a time.
+$targets = New-Object System.Collections.Generic.List[object]
 
 $parents = @(
     (Join-Path $root 'libs'),
@@ -178,83 +304,29 @@ $parents = @(
     (Join-Path $root 'extensions'),
     (Join-Path $root 'apps')
 )
-
 foreach ($parent in $parents) {
     if (-not (Test-Path $parent)) {
         Write-Warning "Skipping missing directory: $parent"
         continue
     }
-
     Get-ChildItem -Path $parent -Directory | ForEach-Object {
-        $project = $_.Name
-        $projectPath = $_.FullName
-
-        Write-Host "Starting Claude session for '$project' in $projectPath"
-
-        $arguments = @(
-            '--allow-dangerously-skip-permissions',
-            '--verbose',
-            '--name', $project,
-            '--rc', $project,
-            '--bg',
-            '--permission-mode', 'bypassPermissions'
-        )
-
-        Start-Process -FilePath 'claude' -ArgumentList $arguments -WorkingDirectory $projectPath
+        $targets.Add([PSCustomObject]@{ Project = $_.Name; Path = $_.FullName })
     }
 }
 
-# Finally, a session for the meta-repo root itself (agent-plugin-dev).
-$rootProject = 'agent-plugin-dev'
-Write-Host "Starting Claude session for '$rootProject' in $root"
+# The meta-repo root itself (agent-plugin-dev).
+$targets.Add([PSCustomObject]@{ Project = 'agent-plugin-dev'; Path = $root })
 
-$rootArguments = @(
-    '--allow-dangerously-skip-permissions',
-    '--verbose',
-    '--name', $rootProject,
-    '--rc', $rootProject,
-    '--bg',
-    '--permission-mode', 'bypassPermissions'
-)
-
-Start-Process -FilePath 'claude' -ArgumentList $rootArguments -WorkingDirectory $root
-
-# A session for the MCP test sandbox (mcp-test).
-$mcpTestPath = Join-Path $root 'mcp-test'
-if (Test-Path $mcpTestPath) {
-    $mcpTestProject = 'mcp-test'
-    Write-Host "Starting Claude session for '$mcpTestProject' in $mcpTestPath"
-
-    $mcpTestArguments = @(
-        '--allow-dangerously-skip-permissions',
-        '--verbose',
-        '--name', $mcpTestProject,
-        '--rc', $mcpTestProject,
-        '--bg',
-        '--permission-mode', 'bypassPermissions'
-    )
-
-    Start-Process -FilePath 'claude' -ArgumentList $mcpTestArguments -WorkingDirectory $mcpTestPath
-} else {
-    Write-Warning "Skipping missing directory: $mcpTestPath"
+# The MCP test sandbox (mcp-test) and the marketplace repo (agent-marketplace).
+foreach ($extra in @('mcp-test', 'agent-marketplace')) {
+    $extraPath = Join-Path $root $extra
+    if (Test-Path $extraPath) {
+        $targets.Add([PSCustomObject]@{ Project = $extra; Path = $extraPath })
+    } else {
+        Write-Warning "Skipping missing directory: $extraPath"
+    }
 }
 
-# A session for the marketplace repo (agent-marketplace).
-$marketplacePath = Join-Path $root 'agent-marketplace'
-if (Test-Path $marketplacePath) {
-    $marketplaceProject = 'agent-marketplace'
-    Write-Host "Starting Claude session for '$marketplaceProject' in $marketplacePath"
-
-    $marketplaceArguments = @(
-        '--allow-dangerously-skip-permissions',
-        '--verbose',
-        '--name', $marketplaceProject,
-        '--rc', $marketplaceProject,
-        '--bg',
-        '--permission-mode', 'bypassPermissions'
-    )
-
-    Start-Process -FilePath 'claude' -ArgumentList $marketplaceArguments -WorkingDirectory $marketplacePath
-} else {
-    Write-Warning "Skipping missing directory: $marketplacePath"
+foreach ($t in $targets) {
+    Start-ClaudeSession -Project $t.Project -Path $t.Path
 }
