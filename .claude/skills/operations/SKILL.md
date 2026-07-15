@@ -1,6 +1,6 @@
 ---
 name: operations
-description: Use to onboard a new plugin or library into the Seretos agent-plugin ecosystem. Scaffolds a Python-MCP plugin or pure-Skill plugin in plugins/<name>/, or a pure Python library (python-lib) in libs/lib-python-<feature>/, sets up the matching GitHub release pipeline (plugins: release.yml + dispatch.yml + marketplace via MARKETPLACE_DISPATCH_TOKEN; libs: tag + release/Nx floating branch, no marketplace), patches workspace.json (+ mcp-test marketplace.json for plugins) and the root .seretos/projects.yml, and runs init.ps1 to wire up symlinks. User does the GitHub-side actions (repo creation, secret setup, push); the skill does the local scaffolding and meta-repo plumbing. Trigger on requests like "I want to add a new plugin", "scaffold a new MCP", "set up a new skill plugin", "add a new python lib", "scaffold a lib-python", "integrate <name> into the ecosystem".
+description: Use to onboard a new plugin or library into the Seretos agent-plugin ecosystem. Scaffolds a Python-MCP plugin or pure-Skill plugin in plugins/<name>/, or a pure Python library (python-lib) in libs/lib-python-<feature>/, sets up the matching GitHub release pipeline (plugins: release.yml + dispatch.yml + marketplace via MARKETPLACE_DISPATCH_TOKEN; libs: tag + release/Nx floating branch, no marketplace), patches workspace.json (+ mcp-test marketplace.json for plugins) and the user's central ~/.seretos/projects.yml, and runs init.ps1 to wire up symlinks. User does the GitHub-side actions (repo creation, secret setup, push); the skill does the local scaffolding and meta-repo plumbing. Trigger on requests like "I want to add a new plugin", "scaffold a new MCP", "set up a new skill plugin", "add a new python lib", "scaffold a lib-python", "integrate <name> into the ecosystem".
 ---
 
 # operations — Plugin & Lib Onboarding
@@ -157,7 +157,7 @@ git commit -m "init: scaffold from operations skill"
 
 ## Phase 4 — Meta-repo integration
 
-Patch the meta-repo (`agent-plugin-dev` root). **For `python-lib`, sections 4.1 (repos only, no symlink), 4.3, and 4.4 apply; skip 4.2 entirely.**
+Patch the meta-repo (`agent-plugin-dev` root) plus one machine-local file outside any repo (4.3). **For `python-lib`, sections 4.1 (repos only, no symlink), 4.3, and 4.4 apply; skip 4.2 entirely.**
 
 ### 4.1 `workspace.json`
 
@@ -205,16 +205,17 @@ Append to `plugins[]`:
 
 Same approach: `Edit` to inject before the closing `]`, preserve formatting.
 
-### 4.3 Root `.seretos/projects.yml`
+### 4.3 Central `~/.seretos/projects.yml`
 
-So the `project-issues` MCP / ticket-routing knows the new project, append an entry to the root `.seretos/projects.yml` `projects:` list (this file already lists every plugin and lib). Match the existing block shape:
+So the `project-issues` MCP / ticket-routing knows the new project, append an entry to the **user's central** `~/.seretos/projects.yml` (i.e. `$HOME/.seretos/projects.yml` — on this machine, `C:\Users\arnev\.seretos\projects.yml`). This file lives **outside every repo**, is machine-specific, and is not version-controlled by any of the repos it references — it is the single source of truth the `project-issues` MCP reads, across all of the user's projects, not just this meta-repo. Match the existing block shape (note the `local_path` field, absent from the old per-repo convention):
 
 ```yaml
   - id: {name}
-    description: ""
+    description: "{description from Phase 1}"
     provider: github
     path: Seretos/{name}
     token_env: GITHUB_TOKEN
+    local_path: {absolute path to the scaffolded repo, e.g. E:/development/agent-plugins/plugins/agent-{name}}
     permissions:
       issues:
         create: true
@@ -225,7 +226,9 @@ So the `project-issues` MCP / ticket-routing knows the new project, append an en
         merge: true
 ```
 
-Use the project name verbatim as `id` (`agent-{name}` or `lib-python-{feature}`). `Edit` to append at the end of the list, preserving indentation.
+Use the project name verbatim as `id` (`agent-{name}` or `lib-python-{feature}`). `Edit` to append at the end of the `projects:` list, preserving indentation. If `~/.seretos/projects.yml` doesn't exist yet, create it with a `version: 1` header followed by `projects:` and this single entry.
+
+> **Do not** also patch this meta-repo's own local `.seretos/` — plugin/lib repos and this meta-repo no longer ship or maintain a repo-local `.seretos/projects.yml`. The central `~/.seretos/projects.yml` is the only place project registration happens now.
 
 ### 4.4 Re-run `scripts/init.ps1`
 
@@ -284,10 +287,11 @@ Templates live under `.claude/skills/operations/templates/`:
 
 All three plugin/lib trees ship a paired `AGENTS.md` + `CLAUDE.md`: `AGENTS.md` is the human/agent doc (the top HTML comment states the authoring rule — *only document what an agent can't derive from the code* — and should be deleted in real projects), and `CLAUDE.md` is a one-line `@AGENTS.md` import so Claude Code, which loads `CLAUDE.md` rather than `AGENTS.md`, picks it up. Keep the `AGENTS.md` lean when you fill it in.
 
-**Every template** (`python-mcp`, `skill-plugin`, `python-lib`, `electron-typescript`) also ships two repo-level configs so the scaffolded repo is workflow-ready the moment it's cloned, no manual setup:
+**Every template** (`python-mcp`, `skill-plugin`, `python-lib`, `electron-typescript`) also ships a repo-level config so the scaffolded repo is workflow-ready the moment it's cloned, no manual setup:
 
 - `.claude/settings.json` — enables the three workflow plugins (`agent-project-issues`, `agent-worktree`, `agent-autonomous-developer` from `@agent-marketplace`) so the ticket/PR/worktree tooling is live inside the new repo. Identical across all templates; no placeholders.
-- `.seretos/projects.yml` — registers the repo *itself* with the `project-issues` MCP (one entry, `merge: false`), so an agent working inside the repo can read/route its own tickets. `id`/`path` are placeholdered (`{{plugin_name}}` / `{{lib_name}}` / `{{app_name}}`). If the repo consumes a sibling lib, add that lib as a second, read-only entry (`create:/modify:/merge: false`) per-instance — that pairing is project-specific and stays out of the template.
+
+Project registration with the `project-issues` MCP is **not** shipped inside the repo — no template carries a `.seretos/projects.yml` — it happens once, machine-locally, in Phase 4.3 by appending to the user's central `~/.seretos/projects.yml`.
 
 Templates use the placeholder set listed in Phase 3. Filenames and directory names that include placeholders must be renamed during the copy walk.
 

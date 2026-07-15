@@ -56,9 +56,9 @@
       "branch": "main"
     },
     {
-      "name": "agent-python-developer-ticket-workflow",
-      "path": "plugins/agent-python-developer-ticket-workflow",
-      "remote": "git@github.com:Seretos/agent-python-developer-ticket-workflow.git",
+      "name": "agent-autonomous-developer",
+      "path": "plugins/agent-autonomous-developer",
+      "remote": "git@github.com:Seretos/agent-autonomous-developer.git",
       "branch": "main"
     },
     {
@@ -120,6 +120,18 @@
       "path": "extensions/obsidian-memory-gatekeeper",
       "remote": "git@github.com:Seretos/obsidian-memory-gatekeeper.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-chrome-wrapper",
+      "path": "plugins/agent-chrome-wrapper",
+      "remote": "git@github.com:Seretos/agent-chrome-wrapper.git",
+      "branch": "main"
+    },
+    {
+      "name": "agent-web-tester",
+      "path": "plugins/agent-web-tester",
+      "remote": "git@github.com:Seretos/agent-web-tester.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
@@ -132,6 +144,8 @@
     { "from": "mcp-test/plugins/agent-unity-wrapper",  "to": "plugins/agent-unity-wrapper" },
     { "from": "mcp-test/plugins/agent-comfy",          "to": "plugins/agent-comfy" },
     { "from": "mcp-test/plugins/agent-batch-reviewer", "to": "plugins/agent-batch-reviewer" },
-    { "from": "mcp-test/plugins/agent-claude-memory-gatekeeper", "to": "plugins/agent-claude-memory-gatekeeper" }
+    { "from": "mcp-test/plugins/agent-claude-memory-gatekeeper", "to": "plugins/agent-claude-memory-gatekeeper" },
+    { "from": "mcp-test/plugins/agent-chrome-wrapper",          "to": "plugins/agent-chrome-wrapper" },
+    { "from": "mcp-test/plugins/agent-web-tester",              "to": "plugins/agent-web-tester" }
   ]
 }
