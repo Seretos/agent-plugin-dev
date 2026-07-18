@@ -52,10 +52,11 @@ jobs:
         # breaks the file. A YAML block scalar holds the markdown verbatim and
         # ${{ }} still expands; bash just references the variables.
         env:
+          # Same fine-grained PAT used for the issue-create calls below also
+          # needs the account-level "Projects: write" permission so the
+          # gh project item-add call further down authenticates with it too
+          # — one token to rotate instead of two.
           GH_TOKEN: ${{ secrets.CONSUMER_TICKET_TOKEN }}
-          # Separate token: see release.yml's board-add step for why this is
-          # kept distinct from CONSUMER_TICKET_TOKEN.
-          PROJECT_BOARD_TOKEN: ${{ secrets.PROJECT_BOARD_TOKEN }}
           CONSUMERS: ${{ inputs.consumers }}
           TITLE: "chore(deps): bump {{lib_name}} to v${{ inputs.version }}"
           BODY: |
@@ -103,7 +104,7 @@ jobs:
             fi
 
             # Adds to the ecosystem's shared Projects v2 board (users/Seretos/projects/2).
-            GH_TOKEN="$PROJECT_BOARD_TOKEN" gh project item-add 2 --owner Seretos --url "$ISSUE_URL" \
-              || echo "::warning::Could not add $ISSUE_URL to project board 2 (check PROJECT_BOARD_TOKEN)."
+            gh project item-add 2 --owner Seretos --url "$ISSUE_URL" \
+              || echo "::warning::Could not add $ISSUE_URL to project board 2 (check CONSUMER_TICKET_TOKEN's Projects:write permission)."
           done <<< "$NORMALIZED"
           exit $failed

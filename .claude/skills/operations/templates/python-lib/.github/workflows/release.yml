@@ -149,14 +149,11 @@ jobs:
         # breaks the file. A YAML block scalar holds the markdown verbatim and
         # ${{ }} still expands; bash just references the variables.
         env:
+          # Same fine-grained PAT used for the issue-create calls below also
+          # needs the account-level "Projects: write" permission so the
+          # gh project item-add call further down authenticates with it too
+          # — one token to rotate instead of two.
           GH_TOKEN: ${{ secrets.CONSUMER_TICKET_TOKEN }}
-          # Separate token: CONSUMER_TICKET_TOKEN only needs Issues:write on
-          # each consumer repo, but adding an item to the user-owned Projects
-          # v2 board needs account-level project scope — kept as its own
-          # secret so the narrower per-consumer token doesn't need
-          # broadening. The same PROJECT_BOARD_TOKEN value is reused verbatim
-          # across every repo in the ecosystem that has this step.
-          PROJECT_BOARD_TOKEN: ${{ secrets.PROJECT_BOARD_TOKEN }}
           # One "owner/repo" per consumer that pins this lib (commas or
           # newlines both work). Leave empty for a lib with no consumers yet —
           # the loop then runs zero times and the step is a green no-op. Add a
@@ -208,7 +205,7 @@ jobs:
             fi
 
             # Adds to the ecosystem's shared Projects v2 board (users/Seretos/projects/2).
-            GH_TOKEN="$PROJECT_BOARD_TOKEN" gh project item-add 2 --owner Seretos --url "$ISSUE_URL" \
-              || echo "::warning::Could not add $ISSUE_URL to project board 2 (check PROJECT_BOARD_TOKEN)."
+            gh project item-add 2 --owner Seretos --url "$ISSUE_URL" \
+              || echo "::warning::Could not add $ISSUE_URL to project board 2 (check CONSUMER_TICKET_TOKEN's Projects:write permission)."
           done <<< "$NORMALIZED"
           exit $failed
