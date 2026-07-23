@@ -149,10 +149,10 @@ jobs:
         # breaks the file. A YAML block scalar holds the markdown verbatim and
         # ${{ }} still expands; bash just references the variables.
         env:
-          # Same fine-grained PAT used for the issue-create calls below also
-          # needs the account-level "Projects: write" permission so the
-          # gh project item-add call further down authenticates with it too
-          # — one token to rotate instead of two.
+          # CONSUMER_TICKET_TOKEN must be a classic PAT (Tokens (classic))
+          # with the `repo` and `project` scopes — fine-grained PATs have no
+          # Projects permission at all, so this same classic-PAT secret also
+          # authenticates the gh project item-add call further down.
           GH_TOKEN: ${{ secrets.CONSUMER_TICKET_TOKEN }}
           # One "owner/repo" per consumer that pins this lib (commas or
           # newlines both work). Leave empty for a lib with no consumers yet —
@@ -206,6 +206,6 @@ jobs:
 
             # Adds to the ecosystem's shared Projects v2 board (users/Seretos/projects/2).
             gh project item-add 2 --owner Seretos --url "$ISSUE_URL" \
-              || echo "::warning::Could not add $ISSUE_URL to project board 2 (check CONSUMER_TICKET_TOKEN's Projects:write permission)."
+              || echo "::warning::Could not add $ISSUE_URL to project board 2 (check CONSUMER_TICKET_TOKEN is a classic PAT with the project scope)."
           done <<< "$NORMALIZED"
           exit $failed
