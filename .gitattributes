@@ -2,3 +2,6 @@
 
 # Shell scripts must keep LF endings everywhere or bash refuses to run them.
 *.sh text eol=lf
+
+# Git hooks are run by sh and must keep LF endings regardless of core.autocrlf.
+.githooks/** text eol=lf

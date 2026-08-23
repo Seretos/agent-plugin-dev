@@ -70,3 +70,49 @@ Each subdirectory has its own `AGENTS.md` with detail on conventions, files, and
 - The user does the GitHub-side actions (repo creation, secret setup, pushing). Don't push or create remote artifacts unless explicitly asked.
 - Marketplace tags are NOT used. `{plugin-name}--v{version}` tags were tried early and removed — Claude Code resolves versions from marketplace.json's content, not from tags on the marketplace repo.
 - `**/settings.local.json` is gitignored repo-wide. Committed baselines live in `settings.json`; user-specific extras go in `settings.local.json`.
+
+## Board columns are the state
+
+All projects share one GitHub Projects v2 board (#2), so a column change is visible ecosystem-wide and is never a local affair. The columns are the state machine; everything else is commentary.
+
+| column | meaning | who moves in |
+|---|---|---|
+| Backlog | everything new (`create_ticket` default) | anyone |
+| Planned | bundled and clarified, no open questions | gatekeeper skill (agent) |
+| Todo | released for the run — the only column the run sees | human only |
+| Doing | package dispatched | run skill |
+| Review | PR open; CI running, red, or awaiting merge | run skill |
+| Done | merged, CI green | run skill |
+| Question | run escalated; the question is a ticket comment | run skill in; human only out (→ Todo or → Backlog) |
+
+Comments are the log, columns are the signal. The run only ever reads Todo, so nothing a human has not released can be picked up. The Question column is emptied only by a human; an empty Question column means there are no open questions. Column names are logical — resolve the native name via `list_board_columns`, never hardcode it.
+
+## Escalation: one level up, never just forwarded
+
+Always escalate one level up until a level can answer; only when no level is left, the human. Escalating is not forwarding: each level must seriously try to answer itself and state what it checked and why that was not enough, so the next level starts from evidence rather than from the original question.
+
+The human is asked only for a decision, never for a retry. Anything whose answer would be "try again" the run does itself, within its round caps. A ticket in the Question column whose only possible reaction is "kick it again" is a system bug, not an open question.
+
+## Every Agent dispatch is unnamed
+
+Never pass `name` to an `Agent` dispatch in this ecosystem, and never resume an agent via `SendMessage`. A named agent delivers its result to a SendMessage mailbox that nothing here listens to; the caller waits for a task notification that never comes and is told nothing. Two runs were lost exactly this way (`agent-autonomous-developer#60` and `#88`).
+
+Continuity does not live in a long-running agent. It lives in the tickets: every return trip is a fresh unnamed dispatch that carries the ticket or package id and reads its state from the comments there.
+
+## Where a memory belongs
+
+A Serena memory entry belongs in the repo whose code it concerns. A fact about two repos is not a memory but a convention, and conventions belong in this file. An entry that would have to live in two stores to be found is duplicated by definition — that is the signal it was misfiled, not a reason to write it twice.
+
+The store is for what an agent looks up, never for what it must obey. A rule written into a memory binds nobody, because nothing guarantees it is read; a rule lives in an AGENTS.md, a skill, or a hook.
+
+## CI is the only truth about green
+
+A PR with a red pipeline is never accepted, whatever a local test run said. A local run is at most a pre-filter that saves time; it is never a verdict, for two reasons: local runs crash regularly for reasons that have nothing to do with the change, and a CI result was produced by nobody with a stake in the outcome.
+
+A run counts as finished only when the pipeline is green — not when the branch is pushed, not when the PR is open. The mechanisms that enforce this (polling, round caps, fix dispatches) live where they execute, in the plugins, not here.
+
+## Doc references are links and they are checked
+
+A reference from one document to a section of another is written as a Markdown link (`[text](path.md#anchor)`), never as prose naming the file and section. The pre-commit hook in `.githooks/` runs `.claude/scripts/check-doc-section-refs.mjs` over the staged content of `.claude/**/*.md`, `human/**/*.md`, and the root `*.md` files: a link whose file or anchor does not exist rejects the commit, and so does a prose reference of the old form. Double-backtick specimens and fenced code are exempt.
+
+The hook is the rule; there is no further doctrine. Scaffolding templates necessarily contain paths and that is fine — the check is only about whether a cross-document reference resolves. A fresh clone needs `git config core.hooksPath .githooks` once.
