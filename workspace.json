@@ -126,6 +126,30 @@
       "path": "plugins/agent-web-tester",
       "remote": "git@github.com:Seretos/agent-web-tester.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-blender-wrapper",
+      "path": "plugins/agent-blender-wrapper",
+      "remote": "git@github.com:Seretos/agent-blender-wrapper.git",
+      "branch": "main"
+    },
+    {
+      "name": "agent-meshy-wrapper",
+      "path": "plugins/agent-meshy-wrapper",
+      "remote": "git@github.com:Seretos/agent-meshy-wrapper.git",
+      "branch": "main"
+    },
+    {
+      "name": "agent-line-feed-guard",
+      "path": "plugins/agent-line-feed-guard",
+      "remote": "git@github.com:Seretos/agent-line-feed-guard.git",
+      "branch": "main"
+    },
+    {
+      "name": "agent-ticket-orchestrator",
+      "path": "plugins/agent-ticket-orchestrator",
+      "remote": "git@github.com:Seretos/agent-ticket-orchestrator.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
@@ -140,6 +164,10 @@
     { "from": "mcp-test/plugins/agent-batch-reviewer", "to": "plugins/agent-batch-reviewer" },
     { "from": "mcp-test/plugins/agent-claude-memory-gatekeeper", "to": "plugins/agent-claude-memory-gatekeeper" },
     { "from": "mcp-test/plugins/agent-chrome-wrapper",          "to": "plugins/agent-chrome-wrapper" },
-    { "from": "mcp-test/plugins/agent-web-tester",              "to": "plugins/agent-web-tester" }
+    { "from": "mcp-test/plugins/agent-web-tester",              "to": "plugins/agent-web-tester" },
+    { "from": "mcp-test/plugins/agent-blender-wrapper",         "to": "plugins/agent-blender-wrapper" },
+    { "from": "mcp-test/plugins/agent-meshy-wrapper",           "to": "plugins/agent-meshy-wrapper" },
+    { "from": "mcp-test/plugins/agent-line-feed-guard",         "to": "plugins/agent-line-feed-guard" },
+    { "from": "mcp-test/plugins/agent-ticket-orchestrator",     "to": "plugins/agent-ticket-orchestrator" }
   ]
 }
