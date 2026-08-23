@@ -16,40 +16,16 @@ A pure Python utility library: it supplies the *mechanism*; any *policy*
 agent how to operate in this repo. Keep it generic — behaviour lives in
 the code and in skills.
 
-## Tool-priority law (read this first)
+## Tool priority
 
-When you decide how to accomplish a step, always prefer the highest
-available tier — this is a strict ordering:
-
-1. **Skills first.** If a skill covers the task, invoke it. Skills encode
-   the intended workflow and supersede ad-hoc approaches. Check for a
-   matching skill before doing anything else.
-2. **MCP second.** If no skill fits but a Model Context Protocol tool can
-   do the job (ticket/PR operations, worktree lifecycle, …), use the MCP
-   tool rather than shelling out. MCP calls are structured and
-   permission-gated.
-3. **Raw CLI / shell last.** Only drop to `git`, `gh`, `curl`, or manual
-   shell when neither a skill nor an MCP exposes the capability (running
-   tests, editing files, local git operations with no MCP equivalent).
-
-Never reach for a lower tier when a higher tier can do the same thing. If
-you find yourself scripting something a skill or MCP already provides,
-stop and use the higher tier.
-
-This ordering **explicitly overrides** the generic harness default that
-says "prefer the dedicated file/search tools (Glob/Grep/Read)" — when a
-skill or MCP covers the task, it wins. Concretely: any *"where is X defined
-/ what does the code support / which Y exist / how does X work / find the
-callers of X"* question is a code-understanding task → use the matching
-skill first (e.g. the `serena-wrapper` symbol-aware tools), never raw
-Glob/Grep/Read.
+Tool priority: see the ecosystem root AGENTS.md — skills and MCP tools
+before raw file tools.
 
 ## Working on a ticket
 
-To process a ticket end to end, invoke the **process-ticket** skill with
-the ticket number. It orchestrates the full pipeline (context extraction →
-planning → implementation → review → draft PR) through subagents. Do not
-do those phases by hand on the main thread — let the skill drive them.
+Ticket work is driven by the ecosystem orchestrator
+(`agent-ticket-orchestrator`), which prepares the worktree and branch and
+dispatches the work package. It is never done by hand on `main`.
 
 ## Repo specifics (minimal by design)
 

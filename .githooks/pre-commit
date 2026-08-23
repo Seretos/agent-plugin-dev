@@ -1,0 +1,51 @@
+#!/usr/bin/env sh
+#
+# Reject a commit that would leave a cross-document reference behind that no longer resolves.
+#
+# Sections get renamed and removed as the documents move; the references pointing at them do not
+# follow on their own. The result is a reader sent somewhere that no longer exists — cheap to prevent
+# mechanically, tedious to hunt by hand. References are written as Markdown links precisely so that
+# "does this still resolve" is decidable rather than guessed at from the surrounding prose.
+#
+# Installed via `core.hooksPath=.githooks` so it is versioned with the repo rather than living only in
+# one machine's `.git/hooks/`. The convention this enforces is the root AGENTS.md section
+# "Doc references are links and they are checked".
+#
+# What is judged is the *index*, not the working tree: the commit being made is the thing under
+# question, so the .md files are read out of the index into a temporary tree first. A working-tree
+# check would pass on unstaged fixes and fail on unstaged breakage, both wrong.
+set -eu
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+CHECKER="$REPO_ROOT/.claude/scripts/check-doc-section-refs.mjs"
+
+if [ ! -f "$CHECKER" ]; then
+  exit 0
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-commit: node not found — skipping the staged-content check." >&2
+  exit 0
+fi
+
+# Only the documents the check reads are materialized: the toolchain under .claude/, the
+# human-facing folder under human/, and the root documents.
+STAGED_DOCS=$(git diff --cached --name-only --diff-filter=ACMR -- \
+  '.claude/*.md' '.claude/**/*.md' 'human/*.md' 'human/**/*.md' ':(glob)*.md' || true)
+
+if [ -z "$STAGED_DOCS" ]; then
+  exit 0
+fi
+
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT INT TERM
+
+git ls-files -z -- '.claude/*.md' '.claude/**/*.md' 'human/*.md' 'human/**/*.md' ':(glob)*.md' \
+  | git checkout-index --stdin -z --prefix="$TMP/" --force
+
+if ! node "$CHECKER" --root "$TMP"; then
+  echo "" >&2
+  echo "pre-commit: commit rejected — fix the reference(s) above, or commit with --no-verify if you" >&2
+  echo "            genuinely mean to land a reference to a section that does not exist." >&2
+  exit 1
+fi

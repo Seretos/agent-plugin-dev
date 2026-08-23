@@ -5,7 +5,6 @@
     }
   },
   "enabledPlugins": {
-    "agent-ecosystem-ticket-router@agent-marketplace": true,
     "agent-project-issues@agent-marketplace": true
   }
 }
