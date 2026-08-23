@@ -14,12 +14,6 @@
       "branch": "main"
     },
     {
-      "name": "agent-vdesktop-skill",
-      "path": "plugins/agent-vdesktop-skill",
-      "remote": "git@github.com:Seretos/agent-vdesktop-skill.git",
-      "branch": "main"
-    },
-    {
       "name": "agent-project-issues",
       "path": "plugins/agent-project-issues",
       "remote": "git@github.com:Seretos/agent-project-issues.git",
@@ -154,7 +148,6 @@
   ],
   "mcpTestSymlinks": [
     { "from": "mcp-test/plugins/agent-vdesktop",       "to": "plugins/agent-vdesktop" },
-    { "from": "mcp-test/plugins/agent-vdesktop-skill", "to": "plugins/agent-vdesktop-skill" },
     { "from": "mcp-test/plugins/agent-project-issues", "to": "plugins/agent-project-issues" },
     { "from": "mcp-test/plugins/agent-worktree",       "to": "plugins/agent-worktree" },
     { "from": "mcp-test/plugins/agent-mcp-tester",     "to": "plugins/agent-mcp-tester" },
