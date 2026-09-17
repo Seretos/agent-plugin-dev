@@ -144,6 +144,18 @@
       "path": "plugins/agent-ticket-orchestrator",
       "remote": "git@github.com:Seretos/agent-ticket-orchestrator.git",
       "branch": "main"
+    },
+    {
+      "name": "lib-python-harness",
+      "path": "libs/lib-python-harness",
+      "remote": "git@github.com:Seretos/lib-python-harness.git",
+      "branch": "main"
+    },
+    {
+      "name": "agent-harness",
+      "path": "plugins/agent-harness",
+      "remote": "git@github.com:Seretos/agent-harness.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
@@ -161,6 +173,7 @@
     { "from": "mcp-test/plugins/agent-blender-wrapper",         "to": "plugins/agent-blender-wrapper" },
     { "from": "mcp-test/plugins/agent-meshy-wrapper",           "to": "plugins/agent-meshy-wrapper" },
     { "from": "mcp-test/plugins/agent-line-feed-guard",         "to": "plugins/agent-line-feed-guard" },
-    { "from": "mcp-test/plugins/agent-ticket-orchestrator",     "to": "plugins/agent-ticket-orchestrator" }
+    { "from": "mcp-test/plugins/agent-ticket-orchestrator",     "to": "plugins/agent-ticket-orchestrator" },
+    { "from": "mcp-test/plugins/agent-harness",                 "to": "plugins/agent-harness" }
   ]
 }
