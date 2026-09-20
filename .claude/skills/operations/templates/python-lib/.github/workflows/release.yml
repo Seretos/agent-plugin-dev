@@ -27,13 +27,13 @@ name: release
 # a force-push because the commit they point to is preserved by git as
 # long as the tag exists.
 #
-# No MARKETPLACE_DISPATCH_TOKEN: a lib never dispatches into the
-# marketplace. The publish steps use only the built-in secrets.GITHUB_TOKEN.
+# A lib never dispatches into the marketplace. The publish steps use only
+# the built-in secrets.GITHUB_TOKEN.
 #
 # Downstream notification: the final step (the notify-consumers composite
 # action, shared with ticket.yml) opens a "bump me" ticket in every
 # repo that pins this lib, so a consumer agent picks the update up. That step
-# needs a CONSUMER_TICKET_TOKEN secret (a PAT with Issues: write on the
+# needs the ECOSYSTEM_TOKEN secret (a PAT with Issues: write on the
 # consumer repos) — GITHUB_TOKEN cannot open issues cross-repo. A fresh lib
 # has no consumers, so the step ships as a no-op until you fill in CONSUMERS.
 # See AGENTS.md "Downstream dependency notifications" and the recovery
@@ -149,7 +149,7 @@ jobs:
         with:
           version: ${{ inputs.version }}
           source_repo: ${{ github.repository }}
-          gh_token: ${{ secrets.CONSUMER_TICKET_TOKEN }}
+          gh_token: ${{ secrets.ECOSYSTEM_TOKEN }}
           # One "owner/repo" per consumer that pins this lib (commas or
           # newlines both work). Leave empty for a lib with no consumers yet:
           # the action then logs a notice and files nothing. Add a line here

@@ -8,7 +8,7 @@ name: release
 #      {{plugin_name}}--v{version} tag on that commit, and publishes a
 #      GitHub Release with the zip attached.
 #   3. The workflow then notifies agent-marketplace directly via
-#      MARKETPLACE_DISPATCH_TOKEN.
+#      ECOSYSTEM_TOKEN.
 on:
   workflow_dispatch:
     inputs:
@@ -164,7 +164,7 @@ jobs:
       - name: Dispatch to agent-marketplace
         shell: bash
         env:
-          GH_PAT:  ${{ secrets.MARKETPLACE_DISPATCH_TOKEN }}
+          GH_PAT:  ${{ secrets.ECOSYSTEM_TOKEN }}
           VERSION: ${{ inputs.version }}
         run: |
           DESC=$(jq -r '.description' .claude-plugin/plugin.json)

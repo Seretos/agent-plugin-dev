@@ -74,7 +74,7 @@ opens a "bump me" ticket there automatically:
   consumer does not define are skipped with a warning, never created and never
   a failure. A missing changelog or a board placement that fails degrades to
   a warning too. Only a ticket that could not be filed at all is an error.
-- **Human prerequisite — `CONSUMER_TICKET_TOKEN`:** a repository secret
+- **Human prerequisite — `ECOSYSTEM_TOKEN`:** a repository secret
   (Settings → Secrets → Actions) holding a fine-grained or classic PAT with
   **Issues: write** (plus the `project` scope for the board placement) on every consumer repo listed in `consumers:`. `GITHUB_TOKEN`
   cannot open cross-repo issues, so without this secret the step is a no-op.

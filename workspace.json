@@ -156,6 +156,18 @@
       "path": "plugins/agent-harness",
       "remote": "git@github.com:Seretos/agent-harness.git",
       "branch": "main"
+    },
+    {
+      "name": "agent-discord-wrapper",
+      "path": "plugins/agent-discord-wrapper",
+      "remote": "git@github.com:Seretos/agent-discord-wrapper.git",
+      "branch": "main"
+    },
+    {
+      "name": "agent-autonomous-prompt-engineer",
+      "path": "plugins/agent-autonomous-prompt-engineer",
+      "remote": "git@github.com:Seretos/agent-autonomous-prompt-engineer.git",
+      "branch": "main"
     }
   ],
   "mcpTestSymlinks": [
@@ -174,6 +186,8 @@
     { "from": "mcp-test/plugins/agent-meshy-wrapper",           "to": "plugins/agent-meshy-wrapper" },
     { "from": "mcp-test/plugins/agent-line-feed-guard",         "to": "plugins/agent-line-feed-guard" },
     { "from": "mcp-test/plugins/agent-ticket-orchestrator",     "to": "plugins/agent-ticket-orchestrator" },
-    { "from": "mcp-test/plugins/agent-harness",                 "to": "plugins/agent-harness" }
+    { "from": "mcp-test/plugins/agent-harness",                 "to": "plugins/agent-harness" },
+    { "from": "mcp-test/plugins/agent-discord-wrapper",         "to": "plugins/agent-discord-wrapper" },
+    { "from": "mcp-test/plugins/agent-autonomous-prompt-engineer", "to": "plugins/agent-autonomous-prompt-engineer" }
   ]
 }

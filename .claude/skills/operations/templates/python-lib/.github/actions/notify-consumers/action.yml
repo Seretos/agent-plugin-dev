@@ -23,7 +23,7 @@ inputs:
     description: >-
       PAT with Issues: write on every consumer (and the project scope for the
       board placement). GITHUB_TOKEN cannot open cross-repo issues. Callers
-      pass secrets.CONSUMER_TICKET_TOKEN — the same secret name in every lib,
+      pass secrets.ECOSYSTEM_TOKEN — the same secret name in every lib,
       so it can later be defined once at organisation level.
     required: true
   labels:

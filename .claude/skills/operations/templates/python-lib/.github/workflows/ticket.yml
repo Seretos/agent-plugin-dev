@@ -2,7 +2,7 @@ name: open-dep-ticket
 
 # Manual recovery workflow: re-file the dependency-update ticket in one or
 # more downstream consumer repos when release.yml's automatic notification
-# step was skipped or failed (e.g. CONSUMER_TICKET_TOKEN was missing or
+# step was skipped or failed (e.g. ECOSYSTEM_TOKEN was missing or
 # expired at release time, or a consumer repo was added after the release).
 #
 # Runs the same notify-consumers composite action as release.yml's "Open
@@ -54,5 +54,5 @@ jobs:
         with:
           version: ${{ inputs.version }}
           source_repo: ${{ github.repository }}
-          gh_token: ${{ secrets.CONSUMER_TICKET_TOKEN }}
+          gh_token: ${{ secrets.ECOSYSTEM_TOKEN }}
           consumers: ${{ inputs.consumers }}
