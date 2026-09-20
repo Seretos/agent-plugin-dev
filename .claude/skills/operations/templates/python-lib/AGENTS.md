@@ -55,19 +55,33 @@ dispatches the work package. It is never done by hand on `main`.
 When a consumer repo starts pinning this lib, wire it up so each release
 opens a "bump me" ticket there automatically:
 
-- **Add the consumer** to the `CONSUMERS` env list in
-  `.github/workflows/release.yml` (one `owner/repo` per line). On the next
-  release the final step opens a
-  `chore(deps): bump {{lib_name}} to vX.Y.Z` issue in every listed repo.
-  The step is idempotent (skips if an open issue with that exact title
-  already exists) and `continue-on-error` (a notification failure never
-  fails the release — it just annotates which consumer/token broke).
+- **Add the consumer** to the `consumers:` input of the "Open
+  dependency-update tickets in consumers" step in
+  `.github/workflows/release.yml` (one `owner/repo` per line), in the same
+  change that makes the consumer pin this lib — a consumer registered after a
+  release misses that release's ticket. On the next release the step opens a
+  `chore(deps): bump {{lib_name}} to vX.Y.Z` issue in every listed repo, via
+  the shared composite action `.github/actions/notify-consumers`
+  (`release.yml` and `ticket.yml` both call it, so the ticket shape lives in
+  one place). The ticket embeds the release changelog under `### What
+  changed` (a link to the release page if it is empty) and is placed in
+  Backlog on the ecosystem board. The step is idempotent (reuses an open issue
+  with that exact title) and `continue-on-error` (a notification failure never
+  fails the release; the run summary and `::error::` annotations name the
+  consumer that broke).
+- **Nothing in the ticket depends on the consumer's setup.** Labels are a
+  wish list (`labels:` input, default `ai-generated,task`): those the
+  consumer does not define are skipped with a warning, never created and never
+  a failure. A missing changelog or a board placement that fails degrades to
+  a warning too. Only a ticket that could not be filed at all is an error.
 - **Human prerequisite — `CONSUMER_TICKET_TOKEN`:** a repository secret
   (Settings → Secrets → Actions) holding a fine-grained or classic PAT with
-  **Issues: write** on every consumer repo in `CONSUMERS`. `GITHUB_TOKEN`
+  **Issues: write** (plus the `project` scope for the board placement) on every consumer repo listed in `consumers:`. `GITHUB_TOKEN`
   cannot open cross-repo issues, so without this secret the step is a no-op.
-  Creating/rotating it is a human task, done once before the first release
-  that has consumers.
+  **The name is the same in every lib on purpose** — never per-lib or
+  per-consumer names. One name means one secret can later be set once at
+  organisation level instead of per repo. Creating/rotating it is a human
+  task, done once before the first release that has consumers.
 - **If the automatic step was skipped or failed** (missing token, or a
   consumer added after a release), re-file manually: Actions →
   `open-dep-ticket` (`.github/workflows/ticket.yml`) → "Run workflow",
