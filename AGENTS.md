@@ -49,6 +49,12 @@ The marketplace itself is the only repo without a feature suffix: `Seretos/agent
 
 End users install via `/plugin marketplace add Seretos/agent-marketplace` and `/plugin install <name>@agent-marketplace`.
 
+## Consumer notification is central
+
+After a lib release, the "bump me" ticket in every consumer is filed by **one** composite action in this repo, [`notify-consumers`](.github/actions/notify-consumers/action.yml) — never by logic copied into a lib. A lib's `release.yml` calls `Seretos/agent-plugin-dev/.github/actions/notify-consumers@main` and supplies only facts: the version, its own repo, its consumers, and `secrets.CONSUMER_TICKET_TOKEN`. The action owns everything else: the ticket shape and changelog, the label wish list (labels a consumer does not define are skipped with a warning, never created, never a failure), idempotency, and placing each new ticket in Backlog on board #2. A change to it reaches every lib's next release at once, which is why it is tested by `notify-consumers-test.yml` and pinned to `@main` on purpose.
+
+`CONSUMER_TICKET_TOKEN` is the one secret name for this in every repo (a classic PAT with `repo` and `project` scope), so it can be set once at organisation level after a move. To re-file by hand — a skipped step, a consumer added after a release, or verifying a change to the action against an existing release — run the `open-dep-ticket` workflow in this repo with `lib`, `version` and `consumers`.
+
 ## Per-repo context
 
 Each subdirectory has its own `AGENTS.md` with detail on conventions, files, and pipelines:
