@@ -59,4 +59,4 @@ jobs:
           version: ${{ inputs.version }}
           source_repo: Seretos/${{ inputs.lib }}
           consumers: ${{ inputs.consumers }}
-          gh_token: ${{ secrets.CONSUMER_TICKET_TOKEN }}
+          gh_token: ${{ secrets.ECOSYSTEM_TOKEN }}
