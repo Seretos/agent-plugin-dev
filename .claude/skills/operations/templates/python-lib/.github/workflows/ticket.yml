@@ -52,6 +52,10 @@ jobs:
         # breaks the file. A YAML block scalar holds the markdown verbatim and
         # ${{ }} still expands; bash just references the variables.
         env:
+          # CONSUMER_TICKET_TOKEN must be a classic PAT (Tokens (classic))
+          # with the `repo` and `project` scopes — fine-grained PATs have no
+          # Projects permission at all, so this same classic-PAT secret also
+          # authenticates the gh project item-add call further down.
           GH_TOKEN: ${{ secrets.CONSUMER_TICKET_TOKEN }}
           CONSUMERS: ${{ inputs.consumers }}
           TITLE: "chore(deps): bump {{lib_name}} to v${{ inputs.version }}"
@@ -79,22 +83,28 @@ jobs:
             [ -z "$CONSUMER" ] && continue
 
             # Idempotency: skip if an open issue with this exact title already
-            # exists. --paginate follows all pages; jq drops pull requests.
-            EXISTING=$(gh api --paginate "repos/${CONSUMER}/issues?state=open&per_page=100" \
-              --jq 'map(select(.pull_request|not)) | .[].title' 2>/dev/null || true)
-            if printf '%s\n' "$EXISTING" | grep -qxF "$TITLE"; then
-              echo "Issue already exists in ${CONSUMER}, skipping."
-              continue
+            # exists — reuse its URL instead of creating a duplicate.
+            # --paginate follows all pages; jq drops pull requests.
+            ISSUE_URL=$(gh api --paginate "repos/${CONSUMER}/issues?state=open&per_page=100" \
+              --jq --arg t "$TITLE" 'map(select((.pull_request|not) and (.title==$t))) | .[0].html_url // empty' 2>/dev/null || true)
+            if [ -n "$ISSUE_URL" ]; then
+              echo "Issue already exists in ${CONSUMER}, skipping creation."
+            else
+              # Attempt with the 'dependencies' label; retry without it if the
+              # consumer repo does not define that label.
+              ISSUE_URL=$(gh issue create --repo "$CONSUMER" --title "$TITLE" --body "$BODY" --label dependencies \
+                 || gh issue create --repo "$CONSUMER" --title "$TITLE" --body "$BODY")
+              if [ -n "$ISSUE_URL" ]; then
+                echo "Ticket opened in ${CONSUMER}: ${ISSUE_URL}"
+              else
+                echo "::error::Filing in ${CONSUMER} failed (check CONSUMER_TICKET_TOKEN scope for that repo)."
+                failed=1
+                continue
+              fi
             fi
 
-            # Attempt with the 'dependencies' label; retry without it if the
-            # consumer repo does not define that label.
-            if gh issue create --repo "$CONSUMER" --title "$TITLE" --body "$BODY" --label dependencies \
-               || gh issue create --repo "$CONSUMER" --title "$TITLE" --body "$BODY"; then
-              echo "Ticket opened in ${CONSUMER}."
-            else
-              echo "::error::Filing in ${CONSUMER} failed (check CONSUMER_TICKET_TOKEN scope for that repo)."
-              failed=1
-            fi
+            # Adds to the ecosystem's shared Projects v2 board (users/Seretos/projects/2).
+            gh project item-add 2 --owner Seretos --url "$ISSUE_URL" \
+              || echo "::warning::Could not add $ISSUE_URL to project board 2 (check CONSUMER_TICKET_TOKEN is a classic PAT with the project scope)."
           done <<< "$NORMALIZED"
           exit $failed

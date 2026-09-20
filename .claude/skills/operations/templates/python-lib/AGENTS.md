@@ -63,11 +63,21 @@ opens a "bump me" ticket there automatically:
   already exists) and `continue-on-error` (a notification failure never
   fails the release — it just annotates which consumer/token broke).
 - **Human prerequisite — `CONSUMER_TICKET_TOKEN`:** a repository secret
-  (Settings → Secrets → Actions) holding a fine-grained or classic PAT with
-  **Issues: write** on every consumer repo in `CONSUMERS`. `GITHUB_TOKEN`
-  cannot open cross-repo issues, so without this secret the step is a no-op.
+  (Settings → Secrets → Actions) holding a **classic PAT** (Settings →
+  Developer settings → Personal access tokens → **Tokens (classic)**) with
+  the **`repo`** scope (covers Issues: write on every consumer repo in
+  `CONSUMERS`) and the **`project`** scope, so the same token also covers
+  the board-add step below. Fine-grained PATs cannot be used here — they
+  have no "Projects" permission at all, a hard GitHub platform limitation,
+  not a setting to look for harder in the UI. `GITHUB_TOKEN` cannot open
+  cross-repo issues, so without this secret the step is a no-op.
   Creating/rotating it is a human task, done once before the first release
   that has consumers.
+- **Project board:** right after filing (or finding) each ticket, the same
+  step adds it to the ecosystem's shared `users/Seretos/projects/2` board via
+  `gh project item-add`, reusing `CONSUMER_TICKET_TOKEN` (its `project` scope
+  authorizes the board-add). Without that scope, the board-add is
+  skipped/warned but never fails the release.
 - **If the automatic step was skipped or failed** (missing token, or a
   consumer added after a release), re-file manually: Actions →
   `open-dep-ticket` (`.github/workflows/ticket.yml`) → "Run workflow",
